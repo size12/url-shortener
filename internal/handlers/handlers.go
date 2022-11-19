@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
 	"net/http"
+	"strings"
 )
 
 func URLHandler(w http.ResponseWriter, r *http.Request) {
@@ -12,13 +14,8 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path != "/" {
-		http.Error(w, "wrong url", 400)
-		return
-	}
-
 	if r.Method == http.MethodGet {
-		id := r.URL.Query().Get("id")
+		id := strings.TrimPrefix(r.URL.Path, "/")
 		if id == "" {
 			http.Error(w, "missing id parameter", 400)
 			return
@@ -29,8 +26,11 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		fmt.Println("Redirecting to:", url)
 		w.Header().Add("Location", url)
 		w.WriteHeader(http.StatusTemporaryRedirect)
+		fmt.Println(w)
+		//w.Write([]byte(""))
 	}
 
 	if r.Method == http.MethodPost {
@@ -47,6 +47,7 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		fmt.Println("New id:", res, string(resBody))
 		w.WriteHeader(201)
 		w.Write([]byte(res))
 		return
