@@ -33,7 +33,6 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 		//fmt.Println(w)
 		log.Println(w)
 		w.WriteHeader(http.StatusTemporaryRedirect)
-		//w.Write([]byte(""))
 	}
 
 	if r.Method == http.MethodPost {
@@ -52,8 +51,8 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("New id:", res, string(resBody))
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		//w.WriteHeader(201)
-		w.Write([]byte("127.0.0.1:8080/" + res))
+		w.WriteHeader(201)
+		w.Write([]byte("http://127.0.0.1:8080/" + res))
 		return
 	}
 }
