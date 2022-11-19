@@ -27,6 +27,7 @@ func NewShortURL(longURL string) (string, error) {
 	lastID := len(Links.Locations)
 	newID := fmt.Sprint(lastID + 1)
 	Links.Locations[newID] = longURL
+	fmt.Println(Links.Locations)
 	return newID, nil
 }
 
@@ -40,5 +41,6 @@ func GetFullURL(id string) (string, error) {
 	if el, ok := Links.Locations[id]; ok {
 		return el, nil
 	}
+	fmt.Println(Links.Locations)
 	return "", errors.New("no such id")
 }
