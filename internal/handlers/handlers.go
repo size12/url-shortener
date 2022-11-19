@@ -27,7 +27,7 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Println("Redirecting to:", url)
-		w.Header().Add("Location", url)
+		w.Header().Set("Location", url)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		fmt.Println(w)
 		//w.Write([]byte(""))
@@ -48,6 +48,7 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Println("New id:", res, string(resBody))
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(201)
 		w.Write([]byte(res))
 		return
