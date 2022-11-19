@@ -7,30 +7,30 @@ import (
 	"sync"
 )
 
-type UrlLinks struct {
+type URLLinks struct {
 	Locations map[string]string
 	sync.Mutex
 }
 
-var Links UrlLinks
+var Links URLLinks
 
-func NewShortUrl(longUrl string) (string, error) {
+func NewShortURL(longURL string) (string, error) {
 	if Links.Locations == nil {
 		Links.Locations = make(map[string]string)
 	}
 
-	if _, err := url.ParseRequestURI(longUrl); err != nil {
-		return "", errors.New("Wrong link")
+	if _, err := url.ParseRequestURI(longURL); err != nil {
+		return "", errors.New("wrong link")
 	}
 	Links.Lock()
 	defer Links.Unlock()
-	lastId := len(Links.Locations)
-	newId := fmt.Sprint(lastId + 1)
-	Links.Locations[newId] = longUrl
-	return fmt.Sprint(lastId + 1), nil
+	lastID := len(Links.Locations)
+	newID := fmt.Sprint(lastID + 1)
+	Links.Locations[newID] = longURL
+	return newID, nil
 }
 
-func GetFullUrl(id string) (string, error) {
+func GetFullURL(id string) (string, error) {
 	if Links.Locations == nil {
 		Links.Locations = make(map[string]string)
 	}
@@ -40,5 +40,5 @@ func GetFullUrl(id string) (string, error) {
 	if el, ok := Links.Locations[id]; ok {
 		return el, nil
 	}
-	return "", errors.New("No such id")
+	return "", errors.New("no such id")
 }
