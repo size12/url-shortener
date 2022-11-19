@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -28,10 +26,10 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//fmt.Println("Redirecting to:", url)
-		log.Println("Redirecting to:", url)
+		//log.Println("Redirecting to:", url)
 		w.Header().Set("Location", url)
 		//fmt.Println(w)
-		log.Println(w)
+		//log.Println(w)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
 
@@ -49,7 +47,7 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Println("New id:", res, string(resBody))
+		//fmt.Println("New id:", res, string(resBody))
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(201)
 		w.Write([]byte("http://127.0.0.1:8080/" + res))
