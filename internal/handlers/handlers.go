@@ -29,7 +29,8 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		w.Header().Add("Location", url)
+		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
 
 	if r.Method == http.MethodPost {
