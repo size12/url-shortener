@@ -53,7 +53,7 @@ func URLHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("New id:", res, string(resBody))
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		//w.WriteHeader(201)
-		w.Write([]byte(res))
+		w.Write([]byte("127.0.0.1:8080/" + res))
 		return
 	}
 }

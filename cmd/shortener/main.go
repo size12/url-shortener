@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
-	server := http.Server{Addr: "127.0.0.1:8080", Handler: http.HandlerFunc(handlers.URLHandler)}
+	mux := http.NewServeMux()
+	server := http.Server{Addr: "127.0.0.1:8080", Handler: mux}
+	mux.HandleFunc("/", handlers.URLHandler)
 	log.Fatal(server.ListenAndServe())
 }
