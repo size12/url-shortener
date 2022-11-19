@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	linkhelpers "github.com/size12/url-shortener/internal/link-helpers"
+	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
 	"net/http"
 )

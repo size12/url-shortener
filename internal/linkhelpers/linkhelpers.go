@@ -1,4 +1,4 @@
-package link_helpers
+package linkhelpers
 
 import (
 	"errors"
