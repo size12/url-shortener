@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func ErrorHandler(w http.ResponseWriter, r *http.Request) {
+func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
 }
 

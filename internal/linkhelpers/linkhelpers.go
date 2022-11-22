@@ -16,7 +16,7 @@ var Links URLLinks
 
 func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	if _, err := url.ParseRequestURI(longURL); err != nil {
-		return "", errors.New("wrong link") //check if url valid
+		return "", errors.New("wrong link") //checks if url valid
 	}
 	Links.Lock()
 	defer Links.Unlock()
