@@ -14,13 +14,9 @@ type URLLinks struct {
 
 var Links URLLinks
 
-func NewShortURL(longURL string) (string, error) {
-	if Links.Locations == nil {
-		Links.Locations = make(map[string]string)
-	}
-
+func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	if _, err := url.ParseRequestURI(longURL); err != nil {
-		return "", errors.New("wrong link")
+		return "", errors.New("wrong link") //check if url valid
 	}
 	Links.Lock()
 	defer Links.Unlock()
@@ -30,11 +26,7 @@ func NewShortURL(longURL string) (string, error) {
 	return newID, nil
 }
 
-func GetFullURL(id string) (string, error) {
-	if Links.Locations == nil {
-		Links.Locations = make(map[string]string)
-	}
-
+func (Links *URLLinks) GetFullURL(id string) (string, error) {
 	Links.Lock()
 	defer Links.Unlock()
 	if el, ok := Links.Locations[id]; ok {
