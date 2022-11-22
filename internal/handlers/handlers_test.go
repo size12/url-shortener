@@ -19,6 +19,7 @@ func TestURLErrorHandler(t *testing.T) {
 	h := http.HandlerFunc(URLErrorHandler)
 	h.ServeHTTP(w, request)
 	assert.Equal(t, 400, w.Result().StatusCode)
+	io.Copy(io.Discard, w.Result().Body)
 	w.Result().Body.Close()
 }
 
