@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -39,21 +40,21 @@ func TestURLPostHandler(t *testing.T) {
 	}{
 		{
 			"add new link storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"https://google.com",
-			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}}, false},
+			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}}, false},
 		},
 		{
 			"add bad link to storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"efjwejfekw",
-			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}}, true},
+			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
 		},
 		{
 			"don't send body",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"",
-			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}}, true},
+			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
 		},
 	}
 
@@ -92,19 +93,19 @@ func TestURLGetHandler(t *testing.T) {
 	}{
 		{
 			"get link which in storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "http://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "http://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"1",
 			want{307, "", false},
 		},
 		{
 			"get link which NOT in storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"2",
 			want{400, "no such id\n", true},
 		},
 		{
 			"don't send ID parameter",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"",
 			want{400, "missing id parameter\n", true},
 		},
@@ -147,20 +148,20 @@ func TestNewShortURL(t *testing.T) {
 	}{
 		{
 			"add new link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"https://google.com",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}},
+				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}},
 				"2",
 				nil,
 			},
 		},
 		{
 			"add bad link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"njkjnekjre",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 				"",
 				errors.New("wrong link"),
 			},
@@ -192,7 +193,7 @@ func TestGetFullURL(t *testing.T) {
 	}{
 		{
 			"get existed link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"1",
 			want{
 				"https://dzen.ru",
@@ -201,7 +202,7 @@ func TestGetFullURL(t *testing.T) {
 		},
 		{
 			"get non-existed link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"2",
 			want{
 				"",
