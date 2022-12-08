@@ -49,7 +49,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				if err != nil {
 					http.Error(w, err.Error(), 400)
 				}
-				res, err := links.NewShortURL(reqJSON.Url)
+				res, err := links.NewShortURL(reqJSON.URL)
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)

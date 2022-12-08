@@ -13,7 +13,7 @@ type URLLinks struct {
 }
 
 type RequestJSON struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
 
 type ResponseJSON struct {
