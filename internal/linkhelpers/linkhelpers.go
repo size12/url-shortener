@@ -12,6 +12,14 @@ type URLLinks struct {
 	*sync.Mutex
 }
 
+type RequestJSON struct {
+	Url string `json:"url"`
+}
+
+type ResponseJSON struct {
+	Result string `json:"result"`
+}
+
 func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	if _, err := url.ParseRequestURI(longURL); err != nil {
 		return "", errors.New("wrong link") //checks if url valid

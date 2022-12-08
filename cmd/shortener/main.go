@@ -16,5 +16,6 @@ func main() {
 	r.MethodNotAllowed(handlers.URLErrorHandler)
 	r.Get("/{id}", handlers.URLGetHandler(links))
 	r.Post("/", handlers.URLPostHandler(links))
+	r.Post("/api/shorten", handlers.URLPostHandler(links))
 	log.Fatal(server.ListenAndServe())
 }
