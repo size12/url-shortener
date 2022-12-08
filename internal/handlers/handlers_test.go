@@ -79,6 +79,58 @@ func TestURLPostHandler(t *testing.T) {
 
 }
 
+func TestURLPostJSONHandler(t *testing.T) {
+	type want struct {
+		code     int
+		response string
+		links    linkhelpers.URLLinks
+		error    bool
+	}
+	cases := []struct {
+		name  string
+		links linkhelpers.URLLinks
+		url   string
+		want  want
+	}{
+		{
+			"add new link storage",
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			`{"url":"https://google.com"}`,
+			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}}, false},
+		},
+		{
+			"add bad link to storage",
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			"{efjwejfekw",
+			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
+		},
+		{
+			"don't send body",
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			"",
+			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(tc.url))
+			request.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			h := URLPostHandler(tc.links)
+			h.ServeHTTP(w, request)
+			res := w.Result()
+			assert.Equal(t, tc.want.code, res.StatusCode)
+			_, err := io.ReadAll(res.Body)
+			defer res.Body.Close()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want.links, tc.links)
+
+		})
+	}
+
+}
+
 func TestURLGetHandler(t *testing.T) {
 	type want struct {
 		code     int
