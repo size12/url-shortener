@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -62,7 +63,8 @@ func TestURLPostHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.url))
 			w := httptest.NewRecorder()
-			h := URLPostHandler(tc.links)
+			cfg := config.GetConfig()
+			h := URLPostHandler(cfg, tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
@@ -117,7 +119,8 @@ func TestURLPostJSONHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(tc.url))
 			request.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
-			h := URLPostHandler(tc.links)
+			cfg := config.GetConfig()
+			h := URLPostHandler(cfg, tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
@@ -170,7 +173,8 @@ func TestURLGetHandler(t *testing.T) {
 			rctx.URLParams.Add("id", tc.id)
 			request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
-			h := URLGetHandler(tc.links)
+			cfg := config.GetConfig()
+			h := URLGetHandler(cfg, tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
