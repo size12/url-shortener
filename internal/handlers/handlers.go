@@ -57,7 +57,7 @@ func URLPostHandler(cfg config.Config, links linkhelpers.URLLinks) http.HandlerF
 					return
 				}
 
-				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: cfg.BaseURL + res})
+				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: cfg.BaseURL + "/" + res})
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)
@@ -78,7 +78,7 @@ func URLPostHandler(cfg config.Config, links linkhelpers.URLLinks) http.HandlerF
 
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
-				w.Write([]byte(cfg.BaseURL + res))
+				w.Write([]byte(cfg.BaseURL + "/" + res))
 			}
 
 		}
