@@ -32,7 +32,7 @@ type ResponseJSON struct {
 func NewStorage(cfg config.Config) (Storage, error) {
 	loc := make(map[string]string)
 	if cfg.StoragePath != "" {
-		file, err := os.OpenFile(cfg.StoragePath+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
+		file, err := os.OpenFile(cfg.StoragePath+"/saved.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
 		if err != nil {
 			return nil, err
 		}
