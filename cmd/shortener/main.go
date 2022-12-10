@@ -1,19 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/handlers"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"log"
 	"net/http"
-	"sync"
 )
 
 func main() {
 	r := chi.NewRouter()
 	cfg := config.GetConfig()
-	links := linkhelpers.URLLinks{Locations: make(map[string]string), Mutex: &sync.Mutex{}}
+	links, err := linkhelpers.NewStorage(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(cfg)
 	server := http.Server{Addr: cfg.ServerAddress, Handler: r}
 	r.MethodNotAllowed(handlers.URLErrorHandler)
 	r.Get("/{id}", handlers.URLGetHandler(cfg, links))

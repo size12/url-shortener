@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/linkhelpers"
@@ -14,7 +13,7 @@ func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
 }
 
-func URLGetHandler(cfg config.Config, links linkhelpers.URLLinks) http.HandlerFunc {
+func URLGetHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if id == "" {
@@ -32,7 +31,7 @@ func URLGetHandler(cfg config.Config, links linkhelpers.URLLinks) http.HandlerFu
 	}
 }
 
-func URLPostHandler(cfg config.Config, links linkhelpers.URLLinks) http.HandlerFunc {
+func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
@@ -41,7 +40,6 @@ func URLPostHandler(cfg config.Config, links linkhelpers.URLLinks) http.HandlerF
 			return
 		}
 
-		fmt.Println(r.Header.Get("Content-Type"))
 		switch r.Header.Get("Content-Type") {
 		case "application/json":
 			{
