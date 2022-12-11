@@ -7,10 +7,16 @@ import (
 
 var cfgFlags Config
 
+const (
+	DefaultServerAddress string = ":8080"
+	DefaultBaseURL       string = "http://127.0.0.1:8080"
+	DefaultStoragePath   string = ""
+)
+
 func init() {
-	flag.StringVar(&cfgFlags.ServerAddress, "a", ":8080", "Server address")
-	flag.StringVar(&cfgFlags.BaseURL, "b", "http://127.0.0.1:8080", "Base URL")
-	flag.StringVar(&cfgFlags.StoragePath, "f", "", "Storage Path")
+	flag.StringVar(&cfgFlags.ServerAddress, "a", DefaultServerAddress, "Server address")
+	flag.StringVar(&cfgFlags.BaseURL, "b", DefaultBaseURL, "Base URL")
+	flag.StringVar(&cfgFlags.StoragePath, "f", DefaultStoragePath, "Storage Path")
 }
 
 type Config struct {
@@ -25,13 +31,13 @@ func GetConfig() Config {
 
 	flag.Parse()
 
-	if cfg.ServerAddress != cfgFlags.ServerAddress {
+	if cfg.ServerAddress != cfgFlags.ServerAddress && cfgFlags.ServerAddress != DefaultServerAddress {
 		cfg.ServerAddress = cfgFlags.ServerAddress
 	}
-	if cfg.BaseURL != cfgFlags.BaseURL {
+	if cfg.BaseURL != cfgFlags.BaseURL && cfgFlags.BaseURL != DefaultBaseURL {
 		cfg.BaseURL = cfgFlags.BaseURL
 	}
-	if cfg.StoragePath != cfgFlags.StoragePath {
+	if cfg.StoragePath != cfgFlags.StoragePath && cfgFlags.StoragePath != DefaultStoragePath {
 		cfg.StoragePath = cfgFlags.StoragePath
 	}
 
