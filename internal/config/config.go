@@ -14,15 +14,9 @@ type Config struct {
 func GetConfig() Config {
 	var cfg Config
 	env.Parse(&cfg)
-	if flag.Lookup("a") != nil {
-		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Server address")
-	}
-	if flag.Lookup("b") != nil {
-		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
-	}
-	if flag.Lookup("c") != nil {
-		flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage Path")
-	}
+	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Server address")
+	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
+	flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage Path")
 	flag.Parse()
 	return cfg
 }
