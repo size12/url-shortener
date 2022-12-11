@@ -28,7 +28,6 @@ type Config struct {
 func GetConfig() Config {
 	var cfg Config
 	env.Parse(&cfg)
-
 	flag.Parse()
 
 	if cfg.ServerAddress != cfgFlags.ServerAddress && cfgFlags.ServerAddress != DefaultServerAddress {
