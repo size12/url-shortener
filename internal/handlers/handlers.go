@@ -62,7 +62,8 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 					return
 				}
 
-				w.Header().Set("Content-Type", "application/json")
+				//w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Content-Type", http.DetectContentType(respJSON))
 				w.WriteHeader(201)
 				w.Write(respJSON)
 			}
@@ -74,7 +75,8 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 					return
 				}
 
-				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				//w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				w.Header().Set("Content-Type", http.DetectContentType([]byte(cfg.BaseURL+"/"+res)))
 				w.WriteHeader(201)
 				w.Write([]byte(cfg.BaseURL + "/" + res))
 			}
