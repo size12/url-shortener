@@ -7,7 +7,6 @@ import (
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
 	"net/http"
-	"strings"
 )
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,9 +63,6 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				if strings.Contains(w.Header().Get("Content-Type"), "gzip") {
-					w.Header().Add("Content-Type", http.DetectContentType(respJSON))
-				}
 				w.WriteHeader(201)
 				w.Write(respJSON)
 			}
@@ -79,9 +75,6 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 				}
 
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-				if strings.Contains(w.Header().Get("Content-Type"), "gzip") {
-					w.Header().Add("Content-Type", "gzip")
-				}
 				w.WriteHeader(201)
 				w.Write([]byte(cfg.BaseURL + "/" + res))
 			}

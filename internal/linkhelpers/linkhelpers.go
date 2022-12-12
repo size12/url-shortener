@@ -59,7 +59,6 @@ func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	lastID := len(Links.Locations)
 	newID := fmt.Sprint(lastID + 1)
 	Links.Locations[newID] = longURL
-	fmt.Println(Links.File)
 	if Links.File != nil {
 		_, err := Links.File.Write([]byte(longURL + "\n"))
 		Links.File.Sync()
@@ -67,7 +66,6 @@ func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 			return "", err
 		}
 	}
-	fmt.Println(Links)
 	return newID, nil
 }
 

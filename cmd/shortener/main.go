@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/handlers"
 	"github.com/size12/url-shortener/internal/linkhelpers"
@@ -18,9 +16,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(cfg)
 	server := http.Server{Addr: cfg.ServerAddress, Handler: r}
-	r.Use(middleware.Compress(5, "gzip"))
+	r.Use(handlers.MiddlewareGzip)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
 	r.Get("/{id}", handlers.URLGetHandler(cfg, links))
 	r.Post("/", handlers.URLPostHandler(cfg, links))
