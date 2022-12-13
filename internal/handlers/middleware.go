@@ -3,7 +3,6 @@ package handlers
 import (
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -41,7 +40,7 @@ func GzipHandle(next http.Handler) http.Handler {
 			io.WriteString(w, err.Error())
 			return
 		}
-		output, err := ioutil.ReadAll(gzreader)
+		output, err := io.ReadAll(gzreader)
 		r.Body.Close()
 		if err != nil {
 			io.WriteString(w, err.Error())
