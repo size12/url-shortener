@@ -49,7 +49,7 @@ func TestURLPostHandler(t *testing.T) {
 			"add bad link to storage",
 			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"efjwejfekw",
-			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
+			want{400, "wrong link", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
 		},
 		{
 			"don't send body",
@@ -72,7 +72,7 @@ func TestURLPostHandler(t *testing.T) {
 			defer res.Body.Close()
 			assert.NoError(t, err)
 			if tc.want.error {
-				assert.Equal(t, tc.want.response, string(resBody))
+				assert.Contains(t, string(resBody), tc.want.response)
 			}
 			assert.Equal(t, tc.want.links, tc.links)
 
@@ -228,7 +228,7 @@ func TestNewShortURL(t *testing.T) {
 			id, err := tc.links.NewShortURL(tc.url)
 			assert.Equal(t, tc.want.links, tc.links)
 			if tc.want.error != nil {
-				assert.Equal(t, tc.want.error, err)
+				assert.Contains(t, err.Error(), tc.want.error.Error())
 			} else {
 				assert.Equal(t, tc.want.id, id)
 			}

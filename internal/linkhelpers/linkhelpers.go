@@ -52,7 +52,7 @@ func NewStorage(cfg config.Config) (Storage, error) {
 
 func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	if _, err := url.ParseRequestURI(longURL); err != nil {
-		return "", errors.New("wrong link") //checks if url valid
+		return "", errors.New("wrong link " + longURL) //checks if url valid
 	}
 	Links.Lock()
 	defer Links.Unlock()
