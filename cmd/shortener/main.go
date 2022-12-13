@@ -17,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 	server := http.Server{Addr: cfg.ServerAddress, Handler: r}
-	r.Use(handlers.MiddlewareGzip)
+	r.Use(handlers.GzipHandle)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
 	r.Get("/{id}", handlers.URLGetHandler(cfg, links))
 	r.Post("/", handlers.URLPostHandler(cfg, links))
