@@ -13,7 +13,6 @@ import (
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
-	return
 }
 
 func URLGetHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {

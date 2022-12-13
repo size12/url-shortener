@@ -32,12 +32,16 @@ func GzipHandle(next http.Handler) http.Handler {
 
 		// создаём gzip.Writer поверх текущего w
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
+		if err != nil {
+			io.WriteString(w, err.Error())
+			return
+		}
 		gzreader, err := gzip.NewReader(r.Body)
 		if err != nil {
 			io.WriteString(w, err.Error())
 			return
 		}
-		output, err := ioutil.ReadAll(gzreader);
+		output, err := ioutil.ReadAll(gzreader)
 		r.Body.Close()
 		if err != nil {
 			io.WriteString(w, err.Error())
@@ -45,7 +49,7 @@ func GzipHandle(next http.Handler) http.Handler {
 		}
 		defer gz.Close()
 
-		r.Body = ioutil.NopCloser(strings.NewReader(string(output)))
+		r.Body = io.NopCloser(strings.NewReader(string(output)))
 
 		w.Header().Set("Content-Encoding", "gzip")
 		// передаём обработчику страницы переменную типа gzipWriter для вывода данных
