@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -19,6 +21,30 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
+func GzipRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		gr, err := gzip.NewReader(r.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer r.Body.Close()
+		defer gr.Close()
+		data, err := io.ReadAll(gr)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		r.Body = io.NopCloser(bytes.NewBuffer(data))
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func GzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// проверяем, что клиент поддерживает gzip-сжатие
@@ -29,6 +55,7 @@ func GzipHandle(next http.Handler) http.Handler {
 			return
 		}
 
+		fmt.Println("accept GZIP")
 		// создаём gzip.Writer поверх текущего w
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 		if err != nil {

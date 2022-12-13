@@ -18,6 +18,7 @@ func main() {
 	}
 	server := http.Server{Addr: cfg.ServerAddress, Handler: r}
 	r.Use(handlers.GzipHandle)
+	r.Use(handlers.GzipRequest)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
 	r.Get("/{id}", handlers.URLGetHandler(cfg, links))
 	r.Post("/", handlers.URLPostHandler(cfg, links))

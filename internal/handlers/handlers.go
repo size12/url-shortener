@@ -7,7 +7,6 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -36,9 +35,8 @@ func URLGetHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFun
 func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resBody, err := io.ReadAll(r.Body)
-		log.Println(string(resBody))
-		fmt.Println(string(resBody))
 		defer r.Body.Close()
+		fmt.Println(string(resBody))
 		if err != nil || string(resBody) == "" {
 			http.Error(w, "wrong body", 400)
 			return
