@@ -13,6 +13,7 @@ import (
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
+	return
 }
 
 func URLGetHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {
@@ -51,6 +52,7 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 				err := json.Unmarshal(resBody, &reqJSON)
 				if err != nil {
 					http.Error(w, err.Error(), 400)
+					return
 				}
 				res, err := links.NewShortURL(reqJSON.URL)
 
