@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -28,19 +27,14 @@ func GzipRequest(next http.Handler) http.Handler {
 			return
 		}
 
-		gr, err := gzip.NewReader(r.Body)
+		// переменная r будет читать входящие данные и распаковывать их
+		reader, err := gzip.NewReader(r.Body)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
-		defer r.Body.Close()
-		defer gr.Close()
-		data, err := io.ReadAll(gr)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		r.Body = io.NopCloser(bytes.NewBuffer(data))
-
+		defer reader.Close()
+		r.Body = reader
 		next.ServeHTTP(w, r)
 	})
 }
