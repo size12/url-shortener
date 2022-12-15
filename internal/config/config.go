@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/caarlos0/env/v6"
 	"os"
 )
@@ -20,6 +21,7 @@ type Config struct {
 func findFlag(name string, defVal string) string {
 	for i, val := range os.Args[1:] {
 		if val == name {
+			fmt.Println(name, os.Args[1:][i+1])
 			return os.Args[1:][i+1]
 		}
 	}
