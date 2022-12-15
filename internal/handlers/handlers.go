@@ -41,7 +41,6 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			http.Error(w, "wrong body", 400)
 			return
 		}
-
 		switch r.Header.Get("Content-Type") {
 		case "application/json":
 			{
