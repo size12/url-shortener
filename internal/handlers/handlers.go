@@ -33,6 +33,7 @@ func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 
 func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(links.Cfg)
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		fmt.Println(string(resBody))
