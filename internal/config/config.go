@@ -1,11 +1,9 @@
 package config
 
 import (
-	"flag"
 	"github.com/caarlos0/env/v6"
+	"os"
 )
-
-var cfgFlags Config
 
 const (
 	DefaultServerAddress string = ":8080"
@@ -13,31 +11,36 @@ const (
 	DefaultStoragePath   string = ""
 )
 
-func init() {
-	flag.StringVar(&cfgFlags.ServerAddress, "a", DefaultServerAddress, "Server address")
-	flag.StringVar(&cfgFlags.BaseURL, "b", DefaultBaseURL, "Base URL")
-	flag.StringVar(&cfgFlags.StoragePath, "f", DefaultStoragePath, "Storage Path")
-}
-
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseURL       string `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
 	StoragePath   string `env:"FILE_STORAGE_PATH" envDefault:""`
 }
 
+func findFlag(name string, defVal string) string {
+	for i, val := range os.Args[1:] {
+		if val == name {
+			return os.Args[1:][i+1]
+		}
+	}
+	return defVal
+}
+
 func GetConfig() Config {
 	var cfg Config
 	env.Parse(&cfg)
-	flag.Parse()
+	aFlag := findFlag("-a", DefaultServerAddress)
+	bFlag := findFlag("-b", DefaultBaseURL)
+	fFlag := findFlag("-f", DefaultStoragePath)
 
-	if cfg.ServerAddress != cfgFlags.ServerAddress && cfgFlags.ServerAddress != DefaultServerAddress {
-		cfg.ServerAddress = cfgFlags.ServerAddress
+	if cfg.ServerAddress != aFlag && aFlag != DefaultServerAddress {
+		cfg.ServerAddress = aFlag
 	}
-	if cfg.BaseURL != cfgFlags.BaseURL && cfgFlags.BaseURL != DefaultBaseURL {
-		cfg.BaseURL = cfgFlags.BaseURL
+	if cfg.BaseURL != bFlag && bFlag != DefaultBaseURL {
+		cfg.BaseURL = bFlag
 	}
-	if cfg.StoragePath != cfgFlags.StoragePath && cfgFlags.StoragePath != DefaultStoragePath {
-		cfg.StoragePath = cfgFlags.StoragePath
+	if cfg.StoragePath != fFlag && fFlag != DefaultStoragePath {
+		cfg.StoragePath = fFlag
 	}
 
 	return cfg
