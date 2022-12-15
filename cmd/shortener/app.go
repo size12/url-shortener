@@ -23,8 +23,8 @@ func (app App) Run() error {
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
-	r.Get("/{id}", handlers.URLGetHandler(app.cfg, links))
-	r.Post("/", handlers.URLPostHandler(app.cfg, links))
-	r.Post("/api/shorten", handlers.URLPostHandler(app.cfg, links))
+	r.Get("/{id}", handlers.URLGetHandler(links))
+	r.Post("/", handlers.URLPostHandler(links))
+	r.Post("/api/shorten", handlers.URLPostHandler(links))
 	return server.ListenAndServe()
 }

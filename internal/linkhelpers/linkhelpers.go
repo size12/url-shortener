@@ -10,12 +10,8 @@ import (
 	"sync"
 )
 
-type Storage interface {
-	NewShortURL(longURL string) (string, error)
-	GetFullURL(id string) (string, error)
-}
-
 type URLLinks struct {
+	Cfg       config.Config
 	Locations map[string]string
 	*sync.Mutex
 	File *os.File
@@ -29,12 +25,12 @@ type ResponseJSON struct {
 	Result string `json:"result"`
 }
 
-func NewStorage(cfg config.Config) (Storage, error) {
+func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	if cfg.StoragePath != "" {
 		file, err := os.OpenFile(cfg.StoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
 		if err != nil {
-			return nil, err
+			return URLLinks{}, err
 		}
 		scanner := bufio.NewScanner(file)
 		i := 1
@@ -43,11 +39,11 @@ func NewStorage(cfg config.Config) (Storage, error) {
 			i += 1
 		}
 		if err := scanner.Err(); err != nil {
-			return nil, err
+			return URLLinks{}, err
 		}
-		return &URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file}, nil
+		return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file, Cfg: cfg}, nil
 	}
-	return &URLLinks{Locations: loc, Mutex: &sync.Mutex{}}, nil
+	return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, Cfg: cfg}, nil
 }
 
 func (Links *URLLinks) NewShortURL(longURL string) (string, error) {

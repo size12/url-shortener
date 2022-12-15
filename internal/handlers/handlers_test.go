@@ -64,7 +64,8 @@ func TestURLPostHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.url))
 			w := httptest.NewRecorder()
 			cfg := config.GetConfig()
-			h := URLPostHandler(cfg, &tc.links)
+			tc.links.Cfg = cfg
+			h := URLPostHandler(tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
@@ -74,7 +75,7 @@ func TestURLPostHandler(t *testing.T) {
 			if tc.want.error {
 				assert.Contains(t, string(resBody), tc.want.response)
 			}
-			assert.Equal(t, tc.want.links, tc.links)
+			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
 
 		})
 	}
@@ -120,14 +121,15 @@ func TestURLPostJSONHandler(t *testing.T) {
 			request.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 			cfg := config.GetConfig()
-			h := URLPostHandler(cfg, &tc.links)
+			tc.links.Cfg = cfg
+			h := URLPostHandler(tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
 			_, err := io.ReadAll(res.Body)
 			defer res.Body.Close()
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want.links, tc.links)
+			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
 
 		})
 	}
@@ -174,7 +176,8 @@ func TestURLGetHandler(t *testing.T) {
 			request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
 			cfg := config.GetConfig()
-			h := URLGetHandler(cfg, &tc.links)
+			tc.links.Cfg = cfg
+			h := URLGetHandler(tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)

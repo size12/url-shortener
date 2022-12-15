@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
 	"net/http"
@@ -14,7 +13,7 @@ func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
 }
 
-func URLGetHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {
+func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if id == "" {
@@ -32,7 +31,7 @@ func URLGetHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFun
 	}
 }
 
-func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFunc {
+func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
@@ -58,7 +57,7 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 					return
 				}
 
-				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: cfg.BaseURL + "/" + res})
+				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res})
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)
@@ -79,7 +78,7 @@ func URLPostHandler(cfg config.Config, links linkhelpers.Storage) http.HandlerFu
 
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
-				w.Write([]byte(cfg.BaseURL + "/" + res))
+				w.Write([]byte(links.Cfg.BaseURL + "/" + res))
 			}
 
 		}
