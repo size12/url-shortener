@@ -4,25 +4,33 @@ import (
 	"fmt"
 	"github.com/caarlos0/env/v6"
 	"os"
+	"strings"
 )
 
 const (
 	DefaultServerAddress string = ":8080"
-	DefaultBaseURL       string = "http://127.0.0.1"
+	DefaultBaseURL       string = "http://127.0.0.1:8080"
 	DefaultStoragePath   string = ""
 )
 
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseURL       string `env:"BASE_URL" envDefault:"http://127.0.0.1"`
+	BaseURL       string `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
 	StoragePath   string `env:"FILE_STORAGE_PATH" envDefault:""`
 }
 
 func findFlag(name string, defVal string) string {
 	for i, val := range os.Args[1:] {
-		if val == name {
-			fmt.Println(name, os.Args[1:][i+1])
+		if val == name || val == ("-"+name) {
+			fmt.Println(os.Args[1:][i+1])
 			return os.Args[1:][i+1]
+		}
+		if strings.Contains(val, "=") {
+			v := strings.Split(val, "=")
+			if v[0] == name || v[0] == ("-"+name) {
+				fmt.Println(v[1])
+				return v[1]
+			}
 		}
 	}
 	return defVal
