@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -39,21 +41,21 @@ func TestURLPostHandler(t *testing.T) {
 	}{
 		{
 			"add new link storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"https://google.com",
-			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}}, false},
+			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}}, false},
 		},
 		{
 			"add bad link to storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"efjwejfekw",
-			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}}, true},
+			want{400, "wrong link", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
 		},
 		{
 			"don't send body",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"",
-			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}}, true},
+			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
 		},
 	}
 
@@ -61,6 +63,8 @@ func TestURLPostHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.url))
 			w := httptest.NewRecorder()
+			cfg := config.GetConfig()
+			tc.links.Cfg = cfg
 			h := URLPostHandler(tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
@@ -69,9 +73,63 @@ func TestURLPostHandler(t *testing.T) {
 			defer res.Body.Close()
 			assert.NoError(t, err)
 			if tc.want.error {
-				assert.Equal(t, tc.want.response, string(resBody))
+				assert.Contains(t, string(resBody), tc.want.response)
 			}
-			assert.Equal(t, tc.want.links, tc.links)
+			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
+
+		})
+	}
+
+}
+
+func TestURLPostJSONHandler(t *testing.T) {
+	type want struct {
+		code     int
+		response string
+		links    linkhelpers.URLLinks
+		error    bool
+	}
+	cases := []struct {
+		name  string
+		links linkhelpers.URLLinks
+		url   string
+		want  want
+	}{
+		{
+			"add new link storage",
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			`{"url":"https://google.com"}`,
+			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}}, false},
+		},
+		{
+			"add bad link to storage",
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			"{efjwejfekw",
+			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
+		},
+		{
+			"don't send body",
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			"",
+			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}}, true},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(tc.url))
+			request.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			cfg := config.GetConfig()
+			tc.links.Cfg = cfg
+			h := URLPostHandler(tc.links)
+			h.ServeHTTP(w, request)
+			res := w.Result()
+			assert.Equal(t, tc.want.code, res.StatusCode)
+			_, err := io.ReadAll(res.Body)
+			defer res.Body.Close()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
 
 		})
 	}
@@ -92,19 +150,19 @@ func TestURLGetHandler(t *testing.T) {
 	}{
 		{
 			"get link which in storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "http://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "http://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"1",
 			want{307, "", false},
 		},
 		{
 			"get link which NOT in storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"2",
 			want{400, "no such id\n", true},
 		},
 		{
 			"don't send ID parameter",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"",
 			want{400, "missing id parameter\n", true},
 		},
@@ -117,6 +175,8 @@ func TestURLGetHandler(t *testing.T) {
 			rctx.URLParams.Add("id", tc.id)
 			request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
+			cfg := config.GetConfig()
+			tc.links.Cfg = cfg
 			h := URLGetHandler(tc.links)
 			h.ServeHTTP(w, request)
 			res := w.Result()
@@ -147,20 +207,20 @@ func TestNewShortURL(t *testing.T) {
 	}{
 		{
 			"add new link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"https://google.com",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}},
+				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}},
 				"2",
 				nil,
 			},
 		},
 		{
 			"add bad link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"njkjnekjre",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 				"",
 				errors.New("wrong link"),
 			},
@@ -171,7 +231,7 @@ func TestNewShortURL(t *testing.T) {
 			id, err := tc.links.NewShortURL(tc.url)
 			assert.Equal(t, tc.want.links, tc.links)
 			if tc.want.error != nil {
-				assert.Equal(t, tc.want.error, err)
+				assert.Contains(t, err.Error(), tc.want.error.Error())
 			} else {
 				assert.Equal(t, tc.want.id, id)
 			}
@@ -192,7 +252,7 @@ func TestGetFullURL(t *testing.T) {
 	}{
 		{
 			"get existed link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"1",
 			want{
 				"https://dzen.ru",
@@ -201,7 +261,7 @@ func TestGetFullURL(t *testing.T) {
 		},
 		{
 			"get non-existed link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"2",
 			want{
 				"",
