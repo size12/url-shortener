@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
@@ -11,6 +10,40 @@ import (
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
+}
+
+func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		userID := userCookie.Value
+
+		historyShort := links.Users[userID]
+		var history []linkhelpers.LinkJSON
+
+		for _, short := range historyShort {
+			long, err := links.GetFullURL(short)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			history = append(history, linkhelpers.LinkJSON{ShortURL: links.Cfg.BaseURL + "/" + short, LongURL: long})
+		}
+
+		if len(history) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		data, err := json.Marshal(history)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+		}
+		w.Write(data)
+	}
 }
 
 func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
@@ -33,10 +66,14 @@ func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 
 func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(links.Cfg)
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		userID := userCookie.Value
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
-		fmt.Println(string(resBody))
 		if err != nil || string(resBody) == "" {
 			http.Error(w, "wrong body", 400)
 			return
@@ -57,6 +94,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					return
 				}
 
+				links.Users[userID] = append(links.Users[userID], res)
 				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res})
 
 				if err != nil {
@@ -75,7 +113,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-
+				links.Users[userID] = append(links.Users[userID], res)
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
 				w.Write([]byte(links.Cfg.BaseURL + "/" + res))

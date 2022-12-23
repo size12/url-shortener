@@ -20,10 +20,12 @@ func (app App) Run() error {
 		log.Fatal(err)
 	}
 	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
+	r.Use(handlers.CookieMiddleware)
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
 	r.Get("/{id}", handlers.URLGetHandler(links))
+	r.Get("/api/user/urls", handlers.URLHistoryHandler(links))
 	r.Post("/", handlers.URLPostHandler(links))
 	r.Post("/api/shorten", handlers.URLPostHandler(links))
 	return server.ListenAndServe()

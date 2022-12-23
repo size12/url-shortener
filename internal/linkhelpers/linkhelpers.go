@@ -13,8 +13,14 @@ import (
 type URLLinks struct {
 	Cfg       config.Config
 	Locations map[string]string
+	Users     map[string][]string
 	*sync.Mutex
 	File *os.File
+}
+
+type LinkJSON struct {
+	ShortURL string `json:"short_url"`
+	LongURL  string `json:"long_url"`
 }
 
 type RequestJSON struct {
@@ -27,6 +33,7 @@ type ResponseJSON struct {
 
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
+	users := make(map[string][]string)
 	if cfg.StoragePath != "" {
 		file, err := os.OpenFile(cfg.StoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
 		if err != nil {
@@ -41,9 +48,9 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 		if err := scanner.Err(); err != nil {
 			return URLLinks{}, err
 		}
-		return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file, Cfg: cfg}, nil
+		return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file, Cfg: cfg, Users: users}, nil
 	}
-	return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, Cfg: cfg}, nil
+	return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, Cfg: cfg, Users: users}, nil
 }
 
 func (Links *URLLinks) NewShortURL(longURL string) (string, error) {

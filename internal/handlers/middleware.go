@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"compress/gzip"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 //compress response
@@ -18,6 +21,35 @@ type gzipWriter struct {
 func (w gzipWriter) Write(b []byte) (int, error) {
 	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
 	return w.Writer.Write(b)
+}
+
+func generateRandom(size int) ([]byte, error) {
+	b := make([]byte, 10)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func CookieMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID, err := r.Cookie("userID")
+		_ = userID
+		if err != nil {
+			randomID, err := generateRandom(8)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+			}
+			expiration := time.Now().Add(365 * 24 * time.Hour)
+			cookieString := hex.EncodeToString(randomID)
+			fmt.Println("New user cookie is:", cookieString)
+			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
+			http.SetCookie(w, &cookie)
+			r.AddCookie(&cookie)
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func GzipRequest(next http.Handler) http.Handler {
@@ -49,7 +81,6 @@ func GzipHandle(next http.Handler) http.Handler {
 			return
 		}
 
-		fmt.Println("accept GZIP")
 		// создаём gzip.Writer поверх текущего w
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 		if err != nil {
