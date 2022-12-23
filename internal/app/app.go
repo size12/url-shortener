@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -10,16 +10,16 @@ import (
 )
 
 type App struct {
-	cfg config.Config
+	Cfg config.Config
 }
 
 func (app App) Run() error {
 	r := chi.NewRouter()
-	links, err := linkhelpers.NewStorage(app.cfg)
+	links, err := linkhelpers.NewStorage(app.Cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := http.Server{Addr: app.cfg.ServerAddress, Handler: r}
+	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
