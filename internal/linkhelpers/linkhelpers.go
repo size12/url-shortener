@@ -20,7 +20,7 @@ type URLLinks struct {
 
 type LinkJSON struct {
 	ShortURL string `json:"short_url"`
-	LongURL  string `json:"long_url"`
+	LongURL  string `json:"original_url"`
 }
 
 type RequestJSON struct {
