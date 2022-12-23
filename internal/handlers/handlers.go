@@ -42,6 +42,7 @@ func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 		}
+		w.Header().Add("Content-Type", "application/json")
 		w.Write(data)
 	}
 }
