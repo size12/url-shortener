@@ -12,7 +12,7 @@ import (
 
 func PingHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if links.Cfg.BasePath == "" {
+		if links.DB == nil {
 			http.Error(w, "DataBase is not working", 500)
 			return
 		}
