@@ -2,8 +2,10 @@ package linkhelpers
 
 import (
 	"bufio"
+	"database/sql"
 	"errors"
 	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/size12/url-shortener/internal/config"
 	"net/url"
 	"os"
@@ -13,8 +15,15 @@ import (
 type URLLinks struct {
 	Cfg       config.Config
 	Locations map[string]string
+	Users     map[string][]string
 	*sync.Mutex
+	DB   *sql.DB
 	File *os.File
+}
+
+type LinkJSON struct {
+	ShortURL string `json:"short_url"`
+	LongURL  string `json:"original_url"`
 }
 
 type RequestJSON struct {
@@ -27,6 +36,9 @@ type ResponseJSON struct {
 
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
+	users := make(map[string][]string)
+	db, nil := sql.Open("pgx", cfg.BasePath)
+
 	if cfg.StoragePath != "" {
 		file, err := os.OpenFile(cfg.StoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
 		if err != nil {
@@ -41,9 +53,9 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 		if err := scanner.Err(); err != nil {
 			return URLLinks{}, err
 		}
-		return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file, Cfg: cfg}, nil
+		return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file, Cfg: cfg, Users: users, DB: db}, nil
 	}
-	return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, Cfg: cfg}, nil
+	return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, Cfg: cfg, Users: users, DB: db}, nil
 }
 
 func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
@@ -57,7 +69,10 @@ func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	Links.Locations[newID] = longURL
 	if Links.File != nil {
 		_, err := Links.File.Write([]byte(longURL + "\n"))
-		Links.File.Sync()
+		if err != nil {
+			return "", err
+		}
+		err = Links.File.Sync()
 		if err != nil {
 			return "", err
 		}
