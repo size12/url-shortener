@@ -43,10 +43,38 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 	if err == nil && cfg.BasePath != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		_, err := db.ExecContext(ctx, "CREATE TABLE Links (ID varchar(255), url varchar(255), cookie varchar(255))")
+
+		rows, err := db.QueryContext(ctx, "SELECT * FROM links")
 		if err != nil {
-			fmt.Println("Can't create new table:", err.Error())
+			return URLLinks{}, err
 		}
+		defer rows.Close()
+		if err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+			_, err := db.ExecContext(ctx, "CREATE TABLE links (short varchar(255), url varchar(255), cookie varchar(255))")
+			if err != nil {
+				fmt.Println("Can't create new table:", err.Error())
+			}
+		} else {
+			for rows.Next() {
+				var short string
+				var url string
+				var cookie string
+				err = rows.Scan(&short, &url, &cookie)
+				loc[short] = url
+				users[cookie] = append(users[cookie], short)
+				if err != nil {
+					break
+				}
+			}
+
+			err = rows.Err()
+			if err != nil {
+				return URLLinks{}, err
+			}
+		}
+		fmt.Println(loc, users)
 	}
 
 	if cfg.StoragePath != "" {
