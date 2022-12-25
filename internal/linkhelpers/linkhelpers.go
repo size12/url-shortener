@@ -2,6 +2,7 @@ package linkhelpers
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 )
 
 type URLLinks struct {
@@ -37,7 +39,15 @@ type ResponseJSON struct {
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
-	db, nil := sql.Open("pgx", cfg.BasePath)
+	db, err := sql.Open("pgx", cfg.BasePath)
+	if err == nil && cfg.BasePath != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		_, err := db.ExecContext(ctx, "CREATE TABLE Links (ID varchar(255), url varchar(255), cookie varchar(255))")
+		if err != nil {
+			fmt.Println("Can't create new table:", err.Error())
+		}
+	}
 
 	if cfg.StoragePath != "" {
 		file, err := os.OpenFile(cfg.StoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
