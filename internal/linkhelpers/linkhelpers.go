@@ -46,10 +46,6 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 
 		rows, err := db.QueryContext(ctx, "SELECT * FROM links")
 		if err != nil {
-			return URLLinks{}, err
-		}
-		defer rows.Close()
-		if err != nil {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 			_, err := db.ExecContext(ctx, "CREATE TABLE links (short varchar(255), url varchar(255), cookie varchar(255))")
@@ -74,6 +70,7 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 				return URLLinks{}, err
 			}
 		}
+		defer rows.Close()
 		fmt.Println(loc, users)
 	}
 
