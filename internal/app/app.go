@@ -16,10 +16,10 @@ type App struct {
 func (app App) Run() error {
 	r := chi.NewRouter()
 	links, err := linkhelpers.NewStorage(app.Cfg)
-	defer links.DB.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer links.DB.Close()
 	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
 	r.Use(handlers.CookieMiddleware)
 	r.Use(handlers.GzipHandle)
