@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
@@ -111,14 +110,17 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				}
 
 				links.Users[userID] = append(links.Users[userID], res)
-				ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
-				defer cancel()
-				r, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					return
+
+				if links.DB != nil {
+					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
+					defer cancel()
+					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
+					if err != nil {
+						http.Error(w, err.Error(), 500)
+						return
+					}
 				}
-				fmt.Println(r)
+
 				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res})
 
 				if err != nil {
@@ -138,14 +140,16 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					return
 				}
 				links.Users[userID] = append(links.Users[userID], res)
-				ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
-				defer cancel()
-				r, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					return
+				if links.DB != nil {
+					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
+					defer cancel()
+					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
+					if err != nil {
+						http.Error(w, err.Error(), 500)
+						return
+					}
 				}
-				fmt.Println(r)
+
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
 				w.Write([]byte(links.Cfg.BaseURL + "/" + res))
