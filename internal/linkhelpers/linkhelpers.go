@@ -39,8 +39,11 @@ type ResponseJSON struct {
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
-	db, err := sql.Open("pgx", cfg.BasePath)
-	if err == nil && cfg.BasePath != "" {
+	if cfg.BasePath != "" {
+		db, err := sql.Open("pgx", cfg.BasePath)
+		if err != nil {
+			return URLLinks{}, err
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
