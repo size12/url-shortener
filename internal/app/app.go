@@ -16,6 +16,7 @@ type App struct {
 func (app App) Run() error {
 	r := chi.NewRouter()
 	links, err := linkhelpers.NewStorage(app.Cfg)
+	defer links.DB.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,6 +25,7 @@ func (app App) Run() error {
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
 	r.MethodNotAllowed(handlers.URLErrorHandler)
+	r.Get("/ping", handlers.PingHandler(links))
 	r.Get("/{id}", handlers.URLGetHandler(links))
 	r.Get("/api/user/urls", handlers.URLHistoryHandler(links))
 	r.Post("/", handlers.URLPostHandler(links))
