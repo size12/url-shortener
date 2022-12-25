@@ -12,6 +12,10 @@ import (
 
 func PingHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if links.Cfg.BasePath == "" {
+			http.Error(w, "DataBase is not working", 500)
+			return
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		if err := links.DB.PingContext(ctx); err != nil {
