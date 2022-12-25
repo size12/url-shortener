@@ -69,6 +69,9 @@ func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	Links.Locations[newID] = longURL
 	if Links.File != nil {
 		_, err := Links.File.Write([]byte(longURL + "\n"))
+		if err != nil {
+			return "", err
+		}
 		err = Links.File.Sync()
 		if err != nil {
 			return "", err
