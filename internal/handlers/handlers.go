@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
@@ -108,25 +107,11 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-				res, err := links.NewShortURL(reqJSON.URL)
+				res, err := links.NewShortURL(reqJSON.URL, userID)
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)
 					return
-				}
-
-				links.Users[userID] = append(links.Users[userID], res)
-				if links.DB != nil {
-					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
-					defer cancel()
-					fmt.Println("Pushing original URL:", reqJSON.URL)
-					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
-					//fmt.Println("Result:", res)
-					//fmt.Println("Error:", err)
-					if err != nil {
-						http.Error(w, err.Error(), 500)
-						return
-					}
 				}
 
 				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res})
@@ -142,26 +127,11 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			}
 		default:
 			{
-				res, err := links.NewShortURL(string(resBody))
+				res, err := links.NewShortURL(string(resBody), userID)
 				if err != nil {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-
-				links.Users[userID] = append(links.Users[userID], res)
-				if links.DB != nil {
-					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
-					defer cancel()
-					fmt.Println("Pushing original URL:", string(resBody))
-					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
-					//fmt.Println("Result: ", res)
-					//fmt.Println("Error:", err)
-					if err != nil {
-						http.Error(w, err.Error(), 500)
-						return
-					}
-				}
-
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
 				w.Write([]byte(links.Cfg.BaseURL + "/" + res))

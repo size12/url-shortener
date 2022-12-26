@@ -48,7 +48,6 @@ func CookieMiddleware(next http.Handler) http.Handler {
 				http.Error(w, err.Error(), 400)
 				return
 			}
-			fmt.Println(id)
 			signSrc := id[:32]
 			id = id[32:]
 			h := hmac.New(sha256.New, secretkey)

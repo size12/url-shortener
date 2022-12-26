@@ -37,10 +37,10 @@ type ResponseJSON struct {
 }
 
 func (links *URLLinks) OpenDB() error {
-	//if links.Cfg.BasePath == "" {
-	//	links.DB = nil
-	//	return errors.New("empty path for database")
-	//}
+	if links.Cfg.BasePath == "" {
+		links.DB = nil
+		return errors.New("empty path for database")
+	}
 
 	db, err := sql.Open("pgx", links.Cfg.BasePath)
 
@@ -125,7 +125,7 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 	return links, nil
 }
 
-func (links *URLLinks) NewShortURL(longURL string) (string, error) {
+func (links *URLLinks) NewShortURL(longURL, cookie string) (string, error) {
 	if _, err := url.ParseRequestURI(longURL); err != nil {
 		return "", errors.New("wrong link " + longURL) //checks if url valid
 	}
@@ -144,6 +144,18 @@ func (links *URLLinks) NewShortURL(longURL string) (string, error) {
 			return "", err
 		}
 	}
+	if links.DB != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", newID, longURL, cookie)
+
+		if err != nil {
+			return "", err
+		}
+	}
+
+	links.Users[cookie] = append(links.Users[cookie], newID)
+
 	return newID, nil
 }
 

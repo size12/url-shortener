@@ -216,20 +216,20 @@ func TestNewShortURL(t *testing.T) {
 	}{
 		{
 			"add new link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 			"https://google.com",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}},
+				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 				"2",
 				nil,
 			},
 		},
 		{
 			"add bad link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 			"njkjnekjre",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 				"",
 				errors.New("wrong link"),
 			},
@@ -237,8 +237,8 @@ func TestNewShortURL(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			id, err := tc.links.NewShortURL(tc.url)
-			assert.Equal(t, tc.want.links, tc.links)
+			id, err := tc.links.NewShortURL(tc.url, "123456")
+			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
 			if tc.want.error != nil {
 				assert.Contains(t, err.Error(), tc.want.error.Error())
 			} else {
