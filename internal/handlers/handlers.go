@@ -121,7 +121,8 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					defer cancel()
 					fmt.Println("Pushing original URL:", reqJSON.URL)
 					res, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
-					fmt.Println("Result: ", res)
+					fmt.Println("Result:", res)
+					fmt.Println("Error:", err)
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						return
@@ -154,6 +155,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					fmt.Println("Pushing original URL:", string(resBody))
 					res, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
 					fmt.Println("Result: ", res)
+					fmt.Println("Error:", err)
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						return
