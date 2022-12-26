@@ -1,16 +1,69 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
 	"net/http"
+	"time"
 )
+
+func PingHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if links.DB != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+			if err := links.DB.PingContext(ctx); err != nil {
+				http.Error(w, "DataBase is not working", 500)
+				return
+			}
+			w.WriteHeader(200)
+		} else {
+			http.Error(w, "DataBase is not working", 500)
+			return
+		}
+	}
+}
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
+}
+
+func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		userID := userCookie.Value
+
+		historyShort := links.Users[userID]
+		var history []linkhelpers.LinkJSON
+
+		for _, short := range historyShort {
+			long, err := links.GetFullURL(short)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			history = append(history, linkhelpers.LinkJSON{ShortURL: links.Cfg.BaseURL + "/" + short, LongURL: long})
+		}
+
+		if len(history) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		data, err := json.Marshal(history)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(data)
+	}
 }
 
 func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
@@ -33,10 +86,14 @@ func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 
 func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(links.Cfg)
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		userID := userCookie.Value
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
-		fmt.Println(string(resBody))
 		if err != nil || string(resBody) == "" {
 			http.Error(w, "wrong body", 400)
 			return
@@ -50,7 +107,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-				res, err := links.NewShortURL(reqJSON.URL)
+				res, err := links.NewShortURL(reqJSON.URL, userID)
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)
@@ -70,12 +127,11 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			}
 		default:
 			{
-				res, err := links.NewShortURL(string(resBody))
+				res, err := links.NewShortURL(string(resBody), userID)
 				if err != nil {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
 				w.Write([]byte(links.Cfg.BaseURL + "/" + res))
