@@ -112,7 +112,7 @@ func (links *URLLinks) OpenFile() error {
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
-	links := URLLinks{Locations: loc, Users: users, Cfg: cfg}
+	links := URLLinks{Locations: loc, Users: users, Cfg: cfg, Mutex: &sync.Mutex{}}
 	err := links.OpenDB()
 	if err != nil {
 		fmt.Printf("Failed connect db: %v\n", err)

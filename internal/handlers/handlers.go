@@ -115,7 +115,6 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				}
 
 				links.Users[userID] = append(links.Users[userID], res)
-
 				if links.DB != nil {
 					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 					defer cancel()
@@ -144,6 +143,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					http.Error(w, err.Error(), 400)
 					return
 				}
+
 				links.Users[userID] = append(links.Users[userID], res)
 				if links.DB != nil {
 					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
