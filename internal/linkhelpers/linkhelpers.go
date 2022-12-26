@@ -36,82 +36,110 @@ type ResponseJSON struct {
 	Result string `json:"result"`
 }
 
+func (links *URLLinks) OpenDB() error {
+	if links.Cfg.BasePath == "" {
+		links.DB = nil
+		return errors.New("empty path for database")
+	}
+
+	db, err := sql.Open("pgx", links.Cfg.BasePath)
+
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (short varchar(255), url varchar(255), cookie varchar(255))")
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	rows, err := db.QueryContext(ctx, "SELECT * FROM links")
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var short string
+		var url string
+		var cookie string
+		err = rows.Scan(&short, &url, &cookie)
+		if err != nil {
+			return err
+		}
+		links.Locations[short] = url
+		links.Users[cookie] = append(links.Users[cookie], short)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
+
+	links.DB = db
+	return nil
+}
+func (links *URLLinks) OpenFile() error {
+	if links.Cfg.StoragePath == "" {
+		return errors.New("empty path for file")
+	}
+
+	file, err := os.OpenFile(links.Cfg.StoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
+	if err != nil {
+		return err
+	}
+	scanner := bufio.NewScanner(file)
+	i := 1
+	for scanner.Scan() {
+		links.Locations[fmt.Sprint(i)] = scanner.Text()
+		i += 1
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	links.File = file
+	return nil
+}
+
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
-	var db *sql.DB
-	if cfg.BasePath != "" {
-		db, err := sql.Open("pgx", cfg.BasePath)
-		if err != nil {
-			return URLLinks{}, err
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		defer cancel()
-
-		rows, err := db.QueryContext(ctx, "SELECT * FROM links")
-		if err != nil {
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-			defer cancel()
-			_, err := db.ExecContext(ctx, "CREATE TABLE links (short varchar(255), url varchar(255), cookie varchar(255))")
-			if err != nil {
-				fmt.Println("Can't create new table:", err.Error())
-			}
-		} else {
-			for rows.Next() {
-				var short string
-				var url string
-				var cookie string
-				err = rows.Scan(&short, &url, &cookie)
-				loc[short] = url
-				users[cookie] = append(users[cookie], short)
-				if err != nil {
-					break
-				}
-			}
-
-			err = rows.Err()
-			if err != nil {
-				return URLLinks{}, err
-			}
-		}
-		defer rows.Close()
-		fmt.Println(loc, users)
+	links := URLLinks{Locations: loc, Users: users, Cfg: cfg}
+	err := links.OpenDB()
+	if err != nil {
+		fmt.Printf("Failed connect db: %v\n", err)
+	}
+	err = links.OpenFile()
+	if err != nil {
+		fmt.Printf("Failed connect to file: %v\n", err)
 	}
 
-	if cfg.StoragePath != "" {
-		file, err := os.OpenFile(cfg.StoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0777)
-		if err != nil {
-			return URLLinks{}, err
-		}
-		scanner := bufio.NewScanner(file)
-		i := 1
-		for scanner.Scan() {
-			loc[fmt.Sprint(i)] = scanner.Text()
-			i += 1
-		}
-		if err := scanner.Err(); err != nil {
-			return URLLinks{}, err
-		}
-		return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, File: file, Cfg: cfg, Users: users, DB: db}, nil
-	}
-	return URLLinks{Locations: loc, Mutex: &sync.Mutex{}, Cfg: cfg, Users: users, DB: db}, nil
+	return links, nil
 }
 
-func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
+func (links *URLLinks) NewShortURL(longURL string) (string, error) {
 	if _, err := url.ParseRequestURI(longURL); err != nil {
 		return "", errors.New("wrong link " + longURL) //checks if url valid
 	}
-	Links.Lock()
-	defer Links.Unlock()
-	lastID := len(Links.Locations)
+	links.Lock()
+	defer links.Unlock()
+	lastID := len(links.Locations)
 	newID := fmt.Sprint(lastID + 1)
-	Links.Locations[newID] = longURL
-	if Links.File != nil {
-		_, err := Links.File.Write([]byte(longURL + "\n"))
+	links.Locations[newID] = longURL
+	if links.File != nil {
+		_, err := links.File.Write([]byte(longURL + "\n"))
 		if err != nil {
 			return "", err
 		}
-		err = Links.File.Sync()
+		err = links.File.Sync()
 		if err != nil {
 			return "", err
 		}
@@ -119,10 +147,10 @@ func (Links *URLLinks) NewShortURL(longURL string) (string, error) {
 	return newID, nil
 }
 
-func (Links *URLLinks) GetFullURL(id string) (string, error) {
-	Links.Lock()
-	defer Links.Unlock()
-	if el, ok := Links.Locations[id]; ok {
+func (links *URLLinks) GetFullURL(id string) (string, error) {
+	links.Lock()
+	defer links.Unlock()
+	if el, ok := links.Locations[id]; ok {
 		return el, nil
 	}
 	return "", errors.New("no such id")
