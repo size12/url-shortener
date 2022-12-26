@@ -37,10 +37,10 @@ type ResponseJSON struct {
 }
 
 func (links *URLLinks) OpenDB() error {
-	if links.Cfg.BasePath == "" {
-		links.DB = nil
-		return errors.New("empty path for database")
-	}
+	//if links.Cfg.BasePath == "" {
+	//	links.DB = nil
+	//	return errors.New("empty path for database")
+	//}
 
 	db, err := sql.Open("pgx", links.Cfg.BasePath)
 

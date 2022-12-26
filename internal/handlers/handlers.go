@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
@@ -118,7 +119,9 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				if links.DB != nil {
 					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 					defer cancel()
-					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
+					fmt.Println("Pushing original URL:", reqJSON.URL)
+					res, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
+					fmt.Println("Result: ", res)
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						return
@@ -148,7 +151,9 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				if links.DB != nil {
 					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 					defer cancel()
-					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
+					fmt.Println("Pushing original URL:", string(resBody))
+					res, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
+					fmt.Println("Result: ", res)
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						return
