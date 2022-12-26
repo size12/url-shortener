@@ -120,9 +120,9 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 					defer cancel()
 					fmt.Println("Pushing original URL:", reqJSON.URL)
-					res, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
-					fmt.Println("Result:", res)
-					fmt.Println("Error:", err)
+					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, reqJSON.URL, userID)
+					//fmt.Println("Result:", res)
+					//fmt.Println("Error:", err)
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						return
@@ -153,9 +153,9 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 					defer cancel()
 					fmt.Println("Pushing original URL:", string(resBody))
-					res, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
-					fmt.Println("Result: ", res)
-					fmt.Println("Error:", err)
+					_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", res, string(resBody), userID)
+					//fmt.Println("Result: ", res)
+					//fmt.Println("Error:", err)
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						return

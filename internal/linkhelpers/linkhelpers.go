@@ -51,7 +51,7 @@ func (links *URLLinks) OpenDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (short varchar(255), url varchar(255), cookie varchar(255))")
+	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (id varchar(255), url varchar(255), cookie varchar(255))")
 	if err != nil {
 		return err
 	}
