@@ -31,6 +31,54 @@ func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
 }
 
+func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		userID := userCookie.Value
+		_ = userID
+
+		resBody, err := io.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil || string(resBody) == "" {
+			http.Error(w, "wrong body", 400)
+			return
+		}
+
+		var reqURLs []linkhelpers.BatchJSON
+		var respURLs []linkhelpers.BatchJSON
+
+		err = json.Unmarshal(resBody, &reqURLs)
+
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+
+		for _, v := range reqURLs {
+			res, err := links.NewShortURL(v.URL, userID)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			respURLs = append(respURLs, linkhelpers.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: links.Cfg.BaseURL + "/" + res})
+		}
+
+		b, err := json.Marshal(respURLs)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		w.Write(b)
+	}
+}
+
 func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")

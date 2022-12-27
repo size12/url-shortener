@@ -29,6 +29,7 @@ func (app App) Run() error {
 	r.Get("/{id}", handlers.URLGetHandler(links))
 	r.Get("/api/user/urls", handlers.URLHistoryHandler(links))
 	r.Post("/", handlers.URLPostHandler(links))
+	r.Post("/api/shorten/batch", handlers.URLBatchHandler(links))
 	r.Post("/api/shorten", handlers.URLPostHandler(links))
 	return server.ListenAndServe()
 }

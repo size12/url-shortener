@@ -28,6 +28,12 @@ type LinkJSON struct {
 	LongURL  string `json:"original_url"`
 }
 
+type BatchJSON struct {
+	CorrelationID string `json:"correlation_id,omitempty"`
+	URL           string `json:"original_url,omitempty"`
+	ShortURL      string `json:"short_url,omitempty"`
+}
+
 type RequestJSON struct {
 	URL string `json:"url"`
 }
