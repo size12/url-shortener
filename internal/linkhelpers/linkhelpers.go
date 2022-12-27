@@ -131,38 +131,73 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 	return links, nil
 }
 
-func (links *URLLinks) NewShortURL(longURL, cookie string) (string, error) {
-	if _, err := url.ParseRequestURI(longURL); err != nil {
-		return "", errors.New("wrong link " + longURL) //checks if url valid
-	}
+func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, error) {
+	result := make([]string, 0)
+	var buf string
 	links.Lock()
 	defer links.Unlock()
-	lastID := len(links.Locations)
-	newID := fmt.Sprint(lastID + 1)
-	links.Locations[newID] = longURL
-	if links.File != nil {
-		_, err := links.File.Write([]byte(longURL + "\n"))
+
+	var tx *sql.Tx
+	var stmt *sql.Stmt
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	if links.DB != nil {
+		var err error
+		tx, err = links.DB.Begin()
 		if err != nil {
-			return "", err
+			return nil, err
+		}
+		defer tx.Rollback()
+		stmt, err = tx.PrepareContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2, $3)")
+		if err != nil {
+			return nil, err
+		}
+		defer stmt.Close()
+	}
+
+	for _, longURL := range urls {
+		if _, err := url.ParseRequestURI(longURL); err != nil {
+			return nil, errors.New("wrong link " + longURL) //checks if url valid
+		}
+
+		lastID := len(links.Locations)
+		newID := fmt.Sprint(lastID + 1)
+		links.Locations[newID] = longURL
+		links.Users[cookie] = append(links.Users[cookie], newID)
+		result = append(result, newID)
+
+		if links.File != nil {
+			buf += longURL + "\n"
+		}
+
+		if links.DB != nil {
+			if _, err := stmt.ExecContext(ctx, newID, longURL, cookie); err != nil {
+				return nil, err
+			}
+		}
+
+	}
+
+	if links.DB != nil {
+		err := tx.Commit()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if links.File != nil {
+		_, err := links.File.Write([]byte(buf))
+		if err != nil {
+			return nil, err
 		}
 		err = links.File.Sync()
 		if err != nil {
-			return "", err
-		}
-	}
-	if links.DB != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		defer cancel()
-		_, err := links.DB.ExecContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2,  $3)", newID, longURL, cookie)
-
-		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 
-	links.Users[cookie] = append(links.Users[cookie], newID)
-
-	return newID, nil
+	return result, nil
 }
 
 func (links *URLLinks) GetFullURL(id string) (string, error) {

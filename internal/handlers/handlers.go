@@ -59,12 +59,12 @@ func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 		}
 
 		for _, v := range reqURLs {
-			res, err := links.NewShortURL(v.URL, userID)
+			res, err := links.NewShortURL(userID, v.URL)
 			if err != nil {
 				http.Error(w, err.Error(), 400)
 				return
 			}
-			respURLs = append(respURLs, linkhelpers.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: links.Cfg.BaseURL + "/" + res})
+			respURLs = append(respURLs, linkhelpers.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: links.Cfg.BaseURL + "/" + res[0]})
 		}
 
 		b, err := json.Marshal(respURLs)
@@ -155,14 +155,14 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-				res, err := links.NewShortURL(reqJSON.URL, userID)
+				res, err := links.NewShortURL(userID, reqJSON.URL)
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)
 					return
 				}
 
-				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res})
+				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res[0]})
 
 				if err != nil {
 					http.Error(w, err.Error(), 400)
@@ -175,14 +175,14 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			}
 		default:
 			{
-				res, err := links.NewShortURL(string(resBody), userID)
+				res, err := links.NewShortURL(userID, string(resBody))
 				if err != nil {
 					http.Error(w, err.Error(), 400)
 					return
 				}
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				w.WriteHeader(201)
-				w.Write([]byte(links.Cfg.BaseURL + "/" + res))
+				w.Write([]byte(links.Cfg.BaseURL + "/" + res[0]))
 			}
 
 		}
