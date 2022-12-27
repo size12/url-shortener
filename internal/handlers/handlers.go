@@ -74,7 +74,7 @@ func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
+		w.WriteHeader(201)
 		w.Write(b)
 	}
 }
