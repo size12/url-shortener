@@ -237,12 +237,12 @@ func TestNewShortURL(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			id, err := tc.links.NewShortURL(tc.url, "123456")
+			id, err := tc.links.NewShortURL("123456", tc.url)
 			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
 			if tc.want.error != nil {
 				assert.Contains(t, err.Error(), tc.want.error.Error())
 			} else {
-				assert.Equal(t, tc.want.id, id)
+				assert.Equal(t, tc.want.id, id[0])
 			}
 		})
 	}
