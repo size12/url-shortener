@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
@@ -161,10 +162,10 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 					http.Error(w, err.Error(), 400)
 					return
 				}
-				res, err := links.NewShortURL(userID, reqJSON.URL)
+				res, err2 := links.NewShortURL(userID, reqJSON.URL)
 
-				if err != nil {
-					http.Error(w, err.Error(), 400)
+				if err2 != nil && !errors.As(err2, &linkhelpers.Error409) {
+					http.Error(w, err2.Error(), 400)
 					return
 				}
 
@@ -176,18 +177,26 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(201)
+				if errors.As(err2, &linkhelpers.Error409) {
+					w.WriteHeader(409)
+				} else {
+					w.WriteHeader(201)
+				}
 				w.Write(respJSON)
 			}
 		default:
 			{
-				res, err := links.NewShortURL(userID, string(resBody))
-				if err != nil {
-					http.Error(w, err.Error(), 400)
+				res, err2 := links.NewShortURL(userID, string(resBody))
+				if err2 != nil && !errors.As(err2, &linkhelpers.Error409) {
+					http.Error(w, err2.Error(), 400)
 					return
 				}
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-				w.WriteHeader(201)
+				if errors.As(err2, &linkhelpers.Error409) {
+					w.WriteHeader(409)
+				} else {
+					w.WriteHeader(201)
+				}
 				w.Write([]byte(links.Cfg.BaseURL + "/" + res[0]))
 			}
 

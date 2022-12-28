@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var Error409 = errors.New("link is already in storage")
+
 type URLLinks struct {
 	Cfg       config.Config
 	Locations map[string]string
@@ -136,6 +138,7 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 	var buf string
 	links.Lock()
 	defer links.Unlock()
+	var isErr409 error = nil
 
 	var tx *sql.Tx
 	var stmt *sql.Stmt
@@ -163,6 +166,13 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 
 		lastID := len(links.Locations)
 		newID := fmt.Sprint(lastID + 1)
+		for id, link := range links.Locations {
+			if link == longURL {
+				newID = fmt.Sprint(id)
+				isErr409 = Error409
+				break
+			}
+		}
 		links.Locations[newID] = longURL
 		links.Users[cookie] = append(links.Users[cookie], newID)
 		result = append(result, newID)
@@ -197,7 +207,7 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 		}
 	}
 
-	return result, nil
+	return result, isErr409
 }
 
 func (links *URLLinks) GetFullURL(id string) (string, error) {
