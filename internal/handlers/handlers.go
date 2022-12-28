@@ -58,13 +58,19 @@ func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			return
 		}
 
+		var urls []string
+
 		for _, v := range reqURLs {
-			res, err := links.NewShortURL(userID, v.URL)
-			if err != nil {
-				http.Error(w, err.Error(), 400)
-				return
-			}
-			respURLs = append(respURLs, linkhelpers.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: links.Cfg.BaseURL + "/" + res[0]})
+			urls = append(urls, v.URL)
+		}
+
+		res, err := links.NewShortURL(userID, urls...)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		for i, v := range reqURLs {
+			respURLs = append(respURLs, linkhelpers.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: links.Cfg.BaseURL + "/" + res[i]})
 		}
 
 		b, err := json.Marshal(respURLs)
