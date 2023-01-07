@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/size12/url-shortener/internal/config"
 	"log"
+
+	"github.com/size12/url-shortener/internal/app"
+	"github.com/size12/url-shortener/internal/config"
 )
 
 func main() {
 	cfg := config.GetConfig()
-	app := App{cfg}
-	log.Fatal(app.Run())
+	service := app.App{Cfg: cfg}
+	log.Fatal(service.Run())
 }

@@ -2,13 +2,23 @@ package handlers
 
 import (
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 //compress response
+
+var secretKey = []byte("super secret key")
+
+//[32 bytes signature][8 bytes userID]
 
 type gzipWriter struct {
 	http.ResponseWriter
@@ -18,6 +28,56 @@ type gzipWriter struct {
 func (w gzipWriter) Write(b []byte) (int, error) {
 	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
 	return w.Writer.Write(b)
+}
+
+func generateRandom(size int) ([]byte, error) {
+	b := make([]byte, size)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func CookieMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Cookie("userID")
+		if ok == nil { //check if cookie is valid
+			id, err := hex.DecodeString(userID.Value)
+			if err != nil || len(id) != 40 {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			signSrc := id[:32]
+			id = id[32:]
+			h := hmac.New(sha256.New, secretKey)
+			h.Write(id)
+			sign := h.Sum(nil)
+			if !hmac.Equal(signSrc, sign) {
+				fmt.Println("failed to verify signature")
+				ok = errors.New("failed to verify signature")
+			}
+		}
+		if ok != nil {
+			fmt.Println("Generating new cookie")
+			randomID, err := generateRandom(8)
+			h := hmac.New(sha256.New, secretKey)
+			h.Write(randomID)
+			sign := h.Sum(nil)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+			}
+			expiration := time.Now().Add(365 * 24 * time.Hour)
+			fmt.Println("Sign:", sign)
+			fmt.Println("ID:", randomID)
+			cookieString := hex.EncodeToString(append(sign, randomID...))
+			fmt.Println("New user cookie is:", cookieString)
+			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
+			http.SetCookie(w, &cookie)
+			r.AddCookie(&cookie)
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func GzipRequest(next http.Handler) http.Handler {
@@ -49,7 +109,6 @@ func GzipHandle(next http.Handler) http.Handler {
 			return
 		}
 
-		fmt.Println("accept GZIP")
 		// создаём gzip.Writer поверх текущего w
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 		if err != nil {
