@@ -64,7 +64,7 @@ func TestURLPostHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.url))
 			w := httptest.NewRecorder()
-			cfg := config.GetConfig()
+			cfg := config.GetDefaultConfig()
 			tc.links.Cfg = cfg
 			h := URLPostHandler(tc.links)
 			expiration := time.Now().Add(365 * 24 * time.Hour)
@@ -125,7 +125,7 @@ func TestURLPostJSONHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(tc.url))
 			request.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
-			cfg := config.GetConfig()
+			cfg := config.GetDefaultConfig()
 			tc.links.Cfg = cfg
 			h := URLPostHandler(tc.links)
 			expiration := time.Now().Add(365 * 24 * time.Hour)
@@ -184,7 +184,7 @@ func TestURLGetHandler(t *testing.T) {
 			rctx.URLParams.Add("id", tc.id)
 			request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
 			w := httptest.NewRecorder()
-			cfg := config.GetConfig()
+			cfg := config.GetDefaultConfig()
 			tc.links.Cfg = cfg
 			h := URLGetHandler(tc.links)
 			h.ServeHTTP(w, request)

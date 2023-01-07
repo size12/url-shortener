@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var Error409 = errors.New("link is already in storage")
+var Err409 = errors.New("link is already in storage")
 
 type URLLinks struct {
 	Cfg       config.Config
@@ -107,7 +107,7 @@ func (links *URLLinks) OpenFile() error {
 	i := 1
 	for scanner.Scan() {
 		links.Locations[fmt.Sprint(i)] = scanner.Text()
-		i += 1
+		i++
 	}
 	if err := scanner.Err(); err != nil {
 		return err
@@ -138,8 +138,7 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 	var buf string
 	links.Lock()
 	defer links.Unlock()
-	var isErr409 error = nil
-
+	var isErr409 error
 	var tx *sql.Tx
 	var stmt *sql.Stmt
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -169,7 +168,7 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 		for id, link := range links.Locations {
 			if link == longURL {
 				newID = fmt.Sprint(id)
-				isErr409 = Error409
+				isErr409 = Err409
 				break
 			}
 		}

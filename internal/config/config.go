@@ -1,60 +1,35 @@
 package config
 
 import (
+	"flag"
 	"github.com/caarlos0/env/v6"
-	"os"
-	"strings"
-)
-
-const (
-	DefaultServerAddress string = ":8080"
-	DefaultBaseURL       string = "http://127.0.0.1:8080"
-	DefaultStoragePath   string = ""
-	DefaultBasePath      string = ""
 )
 
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseURL       string `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
-	StoragePath   string `env:"FILE_STORAGE_PATH" envDefault:""`
-	BasePath      string `env:"DATABASE_DSN" envDefault:""`
+	ServerAddress string `env:"SERVER_ADDRESS"`
+	BaseURL       string `env:"BASE_URL"`
+	StoragePath   string `env:"FILE_STORAGE_PATH"`
+	BasePath      string `env:"DATABASE_DSN"`
 }
 
-func findFlag(name string, defVal string) string {
-	for i, val := range os.Args[1:] {
-		if val == name || val == ("-"+name) {
-			return os.Args[1:][i+1]
-		}
-		if strings.Contains(val, "=") {
-			v := strings.Split(val, "=")
-			if v[0] == name || v[0] == ("-"+name) {
-				return v[1]
-			}
-		}
+func GetDefaultConfig() Config {
+	return Config{
+		ServerAddress: ":8080",
+		BaseURL:       "http://127.0.0.1:8080",
+		StoragePath:   "",
+		BasePath:      "",
 	}
-	return defVal
 }
 
 func GetConfig() Config {
-	var cfg Config
-	env.Parse(&cfg)
-	aFlag := findFlag("-a", DefaultServerAddress)
-	bFlag := findFlag("-b", DefaultBaseURL)
-	fFlag := findFlag("-f", DefaultStoragePath)
-	dFlag := findFlag("-d", DefaultBasePath)
+	cfg := GetDefaultConfig()
+	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Server address")
+	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
+	flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage path")
+	flag.StringVar(&cfg.BasePath, "d", cfg.BasePath, "DataBase path")
+	flag.Parse()
 
-	if cfg.ServerAddress != aFlag && aFlag != DefaultServerAddress {
-		cfg.ServerAddress = aFlag
-	}
-	if cfg.BaseURL != bFlag && bFlag != DefaultBaseURL {
-		cfg.BaseURL = bFlag
-	}
-	if cfg.StoragePath != fFlag && fFlag != DefaultStoragePath {
-		cfg.StoragePath = fFlag
-	}
-	if cfg.BasePath != dFlag && dFlag != DefaultBasePath {
-		cfg.BasePath = dFlag
-	}
+	env.Parse(&cfg)
 
 	return cfg
 }

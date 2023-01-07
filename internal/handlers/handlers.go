@@ -164,7 +164,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				}
 				res, err2 := links.NewShortURL(userID, reqJSON.URL)
 
-				if err2 != nil && !errors.Is(err2, linkhelpers.Error409) {
+				if err2 != nil && !errors.Is(err2, linkhelpers.Err409) {
 					http.Error(w, err2.Error(), 400)
 					return
 				}
@@ -177,7 +177,7 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				if errors.Is(err2, linkhelpers.Error409) {
+				if errors.Is(err2, linkhelpers.Err409) {
 					w.WriteHeader(409)
 				} else {
 					w.WriteHeader(201)
@@ -187,12 +187,12 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 		default:
 			{
 				res, err2 := links.NewShortURL(userID, string(resBody))
-				if err2 != nil && !errors.Is(err2, linkhelpers.Error409) {
+				if err2 != nil && !errors.Is(err2, linkhelpers.Err409) {
 					http.Error(w, err2.Error(), 400)
 					return
 				}
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-				if errors.Is(err2, linkhelpers.Error409) {
+				if errors.Is(err2, linkhelpers.Err409) {
 					w.WriteHeader(409)
 				} else {
 					w.WriteHeader(201)
