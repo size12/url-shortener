@@ -1,12 +1,13 @@
 package app
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/handlers"
 	"github.com/size12/url-shortener/internal/linkhelpers"
-	"log"
-	"net/http"
 )
 
 type App struct {

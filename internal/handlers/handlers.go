@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/size12/url-shortener/internal/linkhelpers"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/size12/url-shortener/internal/linkhelpers"
 )
 
 func PingHandler(links linkhelpers.URLLinks) http.HandlerFunc {

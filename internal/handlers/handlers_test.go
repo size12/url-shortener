@@ -3,10 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/size12/url-shortener/internal/config"
-	"github.com/size12/url-shortener/internal/linkhelpers"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +10,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/size12/url-shortener/internal/config"
+	"github.com/size12/url-shortener/internal/linkhelpers"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestURLErrorHandler(t *testing.T) {

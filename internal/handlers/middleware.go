@@ -16,7 +16,7 @@ import (
 
 //compress response
 
-var secretkey = []byte("super secret key")
+var secretKey = []byte("super secret key")
 
 //[32 bytes signature][8 bytes userID]
 
@@ -50,7 +50,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 			}
 			signSrc := id[:32]
 			id = id[32:]
-			h := hmac.New(sha256.New, secretkey)
+			h := hmac.New(sha256.New, secretKey)
 			h.Write(id)
 			sign := h.Sum(nil)
 			if !hmac.Equal(signSrc, sign) {
@@ -61,7 +61,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 		if ok != nil {
 			fmt.Println("Generating new cookie")
 			randomID, err := generateRandom(8)
-			h := hmac.New(sha256.New, secretkey)
+			h := hmac.New(sha256.New, secretKey)
 			h.Write(randomID)
 			sign := h.Sum(nil)
 			if err != nil {

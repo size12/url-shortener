@@ -6,12 +6,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/size12/url-shortener/internal/config"
 	"net/url"
 	"os"
 	"sync"
 	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/size12/url-shortener/internal/config"
 )
 
 var Err409 = errors.New("link is already in storage")
