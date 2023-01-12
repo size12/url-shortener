@@ -33,6 +33,36 @@ func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
 }
 
+func DeleteHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		userID := userCookie.Value
+
+		resBody, err := io.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil || string(resBody) == "" {
+			http.Error(w, "wrong body", 400)
+			return
+		}
+
+		var toDelete []string
+		err = json.Unmarshal(resBody, &toDelete)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		err = links.DeleteURLs(userID, toDelete)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
 func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")
@@ -41,7 +71,6 @@ func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			return
 		}
 		userID := userCookie.Value
-		_ = userID
 
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
@@ -130,6 +159,12 @@ func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			return
 		}
 		url, err := links.GetFullURL(id)
+
+		if errors.Is(err, linkhelpers.Err410) {
+			w.WriteHeader(http.StatusGone)
+			return
+		}
+
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 			return

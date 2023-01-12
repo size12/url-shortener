@@ -22,6 +22,8 @@ func (app App) Run() error {
 	}
 	defer links.DB.Close()
 	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
+	go links.DBDeleteURLs()
+
 	r.Use(handlers.CookieMiddleware)
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
@@ -29,6 +31,7 @@ func (app App) Run() error {
 	r.Get("/ping", handlers.PingHandler(links))
 	r.Get("/{id}", handlers.URLGetHandler(links))
 	r.Get("/api/user/urls", handlers.URLHistoryHandler(links))
+	r.Delete("/api/user/urls", handlers.DeleteHandler(links))
 	r.Post("/", handlers.URLPostHandler(links))
 	r.Post("/api/shorten/batch", handlers.URLBatchHandler(links))
 	r.Post("/api/shorten", handlers.URLPostHandler(links))

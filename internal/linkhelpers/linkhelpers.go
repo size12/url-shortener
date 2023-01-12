@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"sync"
@@ -16,11 +17,14 @@ import (
 )
 
 var Err409 = errors.New("link is already in storage")
+var Err410 = errors.New("link is deleted, sorry :(")
 
 type URLLinks struct {
-	Cfg       config.Config
-	Locations map[string]string
-	Users     map[string][]string
+	Cfg        config.Config
+	Locations  map[string]string
+	Users      map[string][]string
+	Deleted    map[string]bool
+	willDelete chan string
 	*sync.Mutex
 	DB   *sql.DB
 	File *os.File
@@ -60,7 +64,7 @@ func (links *URLLinks) OpenDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (id varchar(255), url varchar(255), cookie varchar(255))")
+	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (id varchar(255), url varchar(255), cookie varchar(255), deleted boolean)")
 	if err != nil {
 		return err
 	}
@@ -79,12 +83,14 @@ func (links *URLLinks) OpenDB() error {
 		var short string
 		var url string
 		var cookie string
-		err = rows.Scan(&short, &url, &cookie)
+		var deleted bool
+		err = rows.Scan(&short, &url, &cookie, &deleted)
 		if err != nil {
 			return err
 		}
 		links.Locations[short] = url
 		links.Users[cookie] = append(links.Users[cookie], short)
+		links.Deleted[short] = deleted
 	}
 
 	err = rows.Err()
@@ -121,7 +127,9 @@ func (links *URLLinks) OpenFile() error {
 func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
-	links := URLLinks{Locations: loc, Users: users, Cfg: cfg, Mutex: &sync.Mutex{}}
+	deleted := make(map[string]bool)
+	willDelete := make(chan string, 100)
+	links := URLLinks{Locations: loc, Users: users, Deleted: deleted, Cfg: cfg, Mutex: &sync.Mutex{}, willDelete: willDelete}
 	err := links.OpenDB()
 	if err != nil {
 		fmt.Printf("Failed connect db: %v\n", err)
@@ -152,7 +160,7 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 			return nil, err
 		}
 		defer tx.Rollback()
-		stmt, err = tx.PrepareContext(ctx, "INSERT INTO links (id, url, cookie) VALUES ($1, $2, $3)")
+		stmt, err = tx.PrepareContext(ctx, "INSERT INTO links (id, url, cookie, deleted) VALUES ($1, $2, $3, $4)")
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +190,7 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 		}
 
 		if links.DB != nil {
-			if _, err := stmt.ExecContext(ctx, newID, longURL, cookie); err != nil {
+			if _, err := stmt.ExecContext(ctx, newID, longURL, cookie, false); err != nil {
 				return nil, err
 			}
 		}
@@ -214,7 +222,80 @@ func (links *URLLinks) GetFullURL(id string) (string, error) {
 	links.Lock()
 	defer links.Unlock()
 	if el, ok := links.Locations[id]; ok {
-		return el, nil
+		var isErr410 error
+		if links.Deleted[id] {
+			isErr410 = Err410
+		}
+		return el, isErr410
 	}
 	return "", errors.New("no such id")
+}
+
+func (links *URLLinks) DeleteURLs(userID string, ids []string) error {
+	links.Lock()
+	defer links.Unlock()
+	canDelete := links.Users[userID]
+
+	for _, id := range ids {
+		for _, can := range canDelete {
+			if id == can {
+				links.Deleted[id] = true
+				links.willDelete <- id
+				break
+			}
+		}
+	}
+	return nil
+}
+
+// DBDeleteURLs идея такая: ждем по максимуму значения из канала links.willDelete, если они заканчиваются, то всё это добваляем в базу
+func (links *URLLinks) DBDeleteURLs() {
+	if links.DB == nil {
+		for {
+			<-links.willDelete // do nothing, if db is not working
+		}
+	}
+	var willDelete []string
+	for {
+		select {
+		case id := <-links.willDelete:
+			{
+				willDelete = append(willDelete, id)
+			}
+		default:
+			{
+				if len(willDelete) != 0 {
+					tx, err := links.DB.Begin()
+					if err != nil {
+						log.Println("something is wrong:", err.Error())
+						continue
+					}
+					ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+					stmt, err := tx.PrepareContext(ctx, "UPDATE links SET deleted = TRUE WHERE id = $1")
+					if err != nil {
+						log.Println("something is wrong:", err.Error())
+						continue
+					}
+
+					for _, id := range willDelete {
+						if _, err := stmt.ExecContext(ctx, id); err != nil {
+							log.Println("something is wrong:", err.Error())
+							continue
+						}
+					}
+
+					err = tx.Commit()
+					if err != nil {
+						err = tx.Rollback()
+						if err != nil {
+							log.Fatal(err)
+						}
+					}
+
+					willDelete = []string{}
+					cancel()
+				}
+			}
+		}
+	}
 }
