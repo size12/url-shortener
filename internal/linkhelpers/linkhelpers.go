@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"sync"
@@ -19,10 +20,11 @@ var Err409 = errors.New("link is already in storage")
 var Err410 = errors.New("link is deleted, sorry :(")
 
 type URLLinks struct {
-	Cfg       config.Config
-	Locations map[string]string
-	Users     map[string][]string
-	Deleted   map[string]bool
+	Cfg        config.Config
+	Locations  map[string]string
+	Users      map[string][]string
+	Deleted    map[string]bool
+	willDelete chan string
 	*sync.Mutex
 	DB   *sql.DB
 	File *os.File
@@ -48,10 +50,10 @@ type ResponseJSON struct {
 }
 
 func (links *URLLinks) OpenDB() error {
-	//if links.Cfg.BasePath == "" {
-	//	links.DB = nil
-	//	return errors.New("empty path for database")
-	//}
+	if links.Cfg.BasePath == "" {
+		links.DB = nil
+		return errors.New("empty path for database")
+	}
 
 	db, err := sql.Open("pgx", links.Cfg.BasePath)
 
@@ -126,7 +128,8 @@ func NewStorage(cfg config.Config) (URLLinks, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
 	deleted := make(map[string]bool)
-	links := URLLinks{Locations: loc, Users: users, Deleted: deleted, Cfg: cfg, Mutex: &sync.Mutex{}}
+	willDelete := make(chan string, 100)
+	links := URLLinks{Locations: loc, Users: users, Deleted: deleted, Cfg: cfg, Mutex: &sync.Mutex{}, willDelete: willDelete}
 	err := links.OpenDB()
 	if err != nil {
 		fmt.Printf("Failed connect db: %v\n", err)
@@ -233,23 +236,66 @@ func (links *URLLinks) DeleteURLs(userID string, ids []string) error {
 	defer links.Unlock()
 	canDelete := links.Users[userID]
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
 	for _, id := range ids {
 		for _, can := range canDelete {
 			if id == can {
 				links.Deleted[id] = true
-				if links.DB != nil {
-
-					_, err := links.DB.ExecContext(ctx, "UPDATE links SET deleted = TRUE WHERE id = $1", id)
-					if err != nil {
-						return err
-					}
-				}
+				links.willDelete <- id
 				break
 			}
 		}
 	}
 	return nil
+}
+
+// DBDeleteURLs идея такая: ждем по максимуму значения из канала links.willDelete, если они заканчиваются, то всё это добваляем в базу
+func (links *URLLinks) DBDeleteURLs() {
+	if links.DB == nil {
+		for {
+			<-links.willDelete // do nothing, if db is not working
+		}
+	}
+	var willDelete []string
+	for {
+		select {
+		case id := <-links.willDelete:
+			{
+				willDelete = append(willDelete, id)
+			}
+		default:
+			{
+				if len(willDelete) != 0 {
+					tx, err := links.DB.Begin()
+					if err != nil {
+						log.Println("something is wrong:", err.Error())
+						continue
+					}
+					ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+					stmt, err := tx.PrepareContext(ctx, "UPDATE links SET deleted = TRUE WHERE id = $1")
+					if err != nil {
+						log.Println("something is wrong:", err.Error())
+						continue
+					}
+
+					for _, id := range willDelete {
+						if _, err := stmt.ExecContext(ctx, id); err != nil {
+							log.Println("something is wrong:", err.Error())
+							continue
+						}
+					}
+
+					err = tx.Commit()
+					if err != nil {
+						err = tx.Rollback()
+						if err != nil {
+							log.Fatal(err)
+						}
+					}
+
+					willDelete = []string{}
+					cancel()
+				}
+			}
+		}
+	}
 }

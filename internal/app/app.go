@@ -22,6 +22,8 @@ func (app App) Run() error {
 	}
 	defer links.DB.Close()
 	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
+	go links.DBDeleteURLs()
+
 	r.Use(handlers.CookieMiddleware)
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
