@@ -174,16 +174,23 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 
 		lastID := len(links.Locations)
 		newID := fmt.Sprint(lastID + 1)
+		foundThisLink := false
 		for id, link := range links.Locations {
 			if link == longURL {
-				newID = fmt.Sprint(id)
+				newID = id
 				isErr409 = Err409
+				foundThisLink = true
 				break
 			}
 		}
+
+		result = append(result, newID)
+		if foundThisLink {
+			continue //do not add to storage again
+		}
+
 		links.Locations[newID] = longURL
 		links.Users[cookie] = append(links.Users[cookie], newID)
-		result = append(result, newID)
 
 		if links.File != nil {
 			buf += longURL + "\n"
@@ -197,14 +204,14 @@ func (links *URLLinks) NewShortURL(cookie string, urls ...string) ([]string, err
 
 	}
 
-	if links.DB != nil {
+	if links.DB != nil && len(result) > 0 {
 		err := tx.Commit()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if links.File != nil {
+	if links.File != nil && len(result) > 0 {
 		_, err := links.File.Write([]byte(buf))
 		if err != nil {
 			return nil, err
