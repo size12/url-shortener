@@ -33,8 +33,11 @@ func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", 400)
 }
 
-func DeleteHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+func DeleteHandler(storage linkhelpers.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// чтение
+		storage.Delete(cookie, id)
+
 		userCookie, err := r.Cookie("userID")
 		if err != nil {
 			http.Error(w, err.Error(), 400)

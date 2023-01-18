@@ -19,6 +19,40 @@ import (
 var Err409 = errors.New("link is already in storage")
 var Err410 = errors.New("link is deleted, sorry :(")
 
+type Storage interface {
+	CreateShort(cookie string, urls []string) ([]string, error)
+	GetLong(id string) (string, error)
+	Delete(cookie string, ids []string) error
+	GetHistory(cookie string) ([]string, error)
+}
+
+type MapStore struct {
+	Locations map[string]string
+	Users     map[string][]string
+	Deleted   map[string]bool
+}
+
+type DBStorage struct {
+	MapStore
+	DB *sql.DB
+}
+
+func NewStorage(cfg config.Config) Storage {
+	//смотрим конфиг и открываем нужное хранилище и возвращаем его.
+}
+
+func OpenDBStorage(cfg config.Config) DBStorage {
+	//открываем базу данных, будет вызываться в NewStorage()
+}
+
+func (DB *DBStorage) CreateShort(cookie string, urls []string) ([]string, error) {
+	// тут будет код
+}
+
+//описываем все методы, чтобы удовлетворять интерфейсу
+
+//стоит ли распределеть все методы по файлам? (для базы в этом файле, для файла в другом)
+
 type URLLinks struct {
 	Cfg        config.Config
 	Locations  map[string]string
