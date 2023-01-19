@@ -3,7 +3,6 @@ package storage
 import (
 	"errors"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/size12/url-shortener/internal/config"
 )
 
@@ -26,7 +25,7 @@ func NewStorage(cfg config.Config) (Storage, error) {
 	}
 
 	if cfg.BasePath != "" {
-		return NewMapStorage(cfg) //will be DB soon...
+		return NewDBStorage(cfg)
 	}
 
 	return NewMapStorage(cfg)

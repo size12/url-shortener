@@ -10,22 +10,15 @@ import (
 	"github.com/size12/url-shortener/internal/storage"
 )
 
-//func PingHandler(links storage.Storage) http.HandlerFunc {
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		if links.DB != nil {
-//			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-//			defer cancel()
-//			if err := links.DB.PingContext(ctx); err != nil {
-//				http.Error(w, "DataBase is not working", 500)
-//				return
-//			}
-//			w.WriteHeader(200)
-//		} else {
-//			http.Error(w, "DataBase is not working", 500)
-//			return
-//		}
-//	}
-//}
+func PingHandler(s storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := s.Ping()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", http.StatusBadRequest)

@@ -16,24 +16,24 @@ type App struct {
 
 func (app App) Run() error {
 	r := chi.NewRouter()
-	storage, err := storage.NewStorage(app.Cfg)
+	s, err := storage.NewStorage(app.Cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//defer links.DB.Close()
+
 	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
-	//go links.DBDeleteURLs()
 
 	r.Use(handlers.CookieMiddleware)
 	r.Use(handlers.GzipHandle)
 	r.Use(handlers.GzipRequest)
+
 	r.MethodNotAllowed(handlers.URLErrorHandler)
-	//r.Get("/ping", handlers.PingHandler(links))
-	r.Get("/{id}", handlers.URLGetHandler(storage))
-	r.Get("/api/user/urls", handlers.URLHistoryHandler(storage))
-	r.Delete("/api/user/urls", handlers.DeleteHandler(storage))
-	r.Post("/", handlers.URLPostHandler(storage))
-	r.Post("/api/shorten/batch", handlers.URLBatchHandler(storage))
-	r.Post("/api/shorten", handlers.URLPostHandler(storage))
+	r.Get("/ping", handlers.PingHandler(s))
+	r.Get("/{id}", handlers.URLGetHandler(s))
+	r.Get("/api/user/urls", handlers.URLHistoryHandler(s))
+	r.Delete("/api/user/urls", handlers.DeleteHandler(s))
+	r.Post("/", handlers.URLPostHandler(s))
+	r.Post("/api/shorten/batch", handlers.URLBatchHandler(s))
+	r.Post("/api/shorten", handlers.URLPostHandler(s))
 	return server.ListenAndServe()
 }
