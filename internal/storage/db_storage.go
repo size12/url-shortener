@@ -46,11 +46,12 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	}
 
 	rows, err := db.QueryContext(ctx, "SELECT COUNT(*) FROM links")
-	defer rows.Close()
 
 	if err != nil {
 		return s, err
 	}
+
+	defer rows.Close()
 
 	rows.Next()
 	err = rows.Scan(&s.LastID)
@@ -129,11 +130,12 @@ func (s *DBStorage) GetLong(id string) (string, error) {
 	defer cancel()
 
 	rows, err := s.DB.QueryContext(ctx, "SELECT url, deleted FROM links WHERE id=$1 LIMIT 1", id)
-	defer rows.Close()
 
 	if err != nil {
 		return "", err
 	}
+
+	defer rows.Close()
 
 	var long string
 	var deleted bool
@@ -143,6 +145,10 @@ func (s *DBStorage) GetLong(id string) (string, error) {
 
 	if err != nil {
 		return "", Err404
+	}
+
+	if err := rows.Err(); err != nil {
+		return "", err
 	}
 
 	if deleted {
@@ -189,11 +195,12 @@ func (s *DBStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	defer cancel()
 
 	rows, err := s.DB.QueryContext(ctx, "SELECT id, url FROM links WHERE cookie=$1", userID)
-	defer rows.Close()
 
 	if err != nil {
 		return history, err
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var id string
