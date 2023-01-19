@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
-	"github.com/size12/url-shortener/internal/linkhelpers"
+	"github.com/size12/url-shortener/internal/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,32 +32,32 @@ func TestURLPostHandler(t *testing.T) {
 	type want struct {
 		code     int
 		response string
-		links    linkhelpers.URLLinks
+		links    *storage.MapStorage
 		error    bool
 	}
 	cases := []struct {
 		name  string
-		links linkhelpers.URLLinks
+		links *storage.MapStorage
 		url   string
 		want  want
 	}{
 		{
 			"add new link storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 			"https://google.com",
-			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, false},
+			want{201, "2", &storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, false},
 		},
 		{
 			"add bad link to storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
 			"efjwejfekw",
-			want{400, "wrong link", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
+			want{400, "wrong link", &storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
 		},
 		{
 			"don't send body",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
 			"",
-			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
+			want{400, "wrong body\n", &storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
 		},
 	}
 
@@ -92,32 +92,32 @@ func TestURLPostJSONHandler(t *testing.T) {
 	type want struct {
 		code     int
 		response string
-		links    linkhelpers.URLLinks
+		links    *storage.MapStorage
 		error    bool
 	}
 	cases := []struct {
 		name  string
-		links linkhelpers.URLLinks
+		links *storage.MapStorage
 		url   string
 		want  want
 	}{
 		{
 			"add new link storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 			`{"url":"https://google.com"}`,
-			want{201, "2", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, false},
+			want{201, "2", &storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, false},
 		},
 		{
 			"add bad link to storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
 			"{efjwejfekw",
-			want{400, "wrong link\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
+			want{400, "wrong link\n", &storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
 		},
 		{
 			"don't send body",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}},
 			"",
-			want{400, "wrong body\n", linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
+			want{400, "wrong body\n", &storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{"123456": {"2"}}}, true},
 		},
 	}
 
@@ -154,25 +154,25 @@ func TestURLGetHandler(t *testing.T) {
 	}
 	cases := []struct {
 		name  string
-		links linkhelpers.URLLinks
+		links *storage.MapStorage
 		id    string
 		want  want
 	}{
 		{
 			"get link which in storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "http://dzen.ru"}, Mutex: &sync.Mutex{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "http://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"1",
 			want{307, "", false},
 		},
 		{
 			"get link which NOT in storage",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"2",
-			want{400, "no such id\n", true},
+			want{404, "not found\n", true},
 		},
 		{
 			"don't send ID parameter",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"",
 			want{400, "missing id parameter\n", true},
 		},
@@ -205,32 +205,32 @@ func TestURLGetHandler(t *testing.T) {
 
 func TestNewShortURL(t *testing.T) {
 	type want struct {
-		links linkhelpers.URLLinks
+		links *storage.MapStorage
 		id    string
 		error error
 	}
 	cases := []struct {
 		name  string
-		links linkhelpers.URLLinks
+		links *storage.MapStorage
 		url   string
 		want  want
 	}{
 		{
 			"add new link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 			"https://google.com",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
+				&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 				"2",
 				nil,
 			},
 		},
 		{
 			"add bad link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 			"njkjnekjre",
 			want{
-				linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
+				&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
 				"",
 				errors.New("wrong link"),
 			},
@@ -238,7 +238,7 @@ func TestNewShortURL(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			id, err := tc.links.NewShortURL("123456", tc.url)
+			id, err := tc.links.CreateShort("123456", tc.url)
 			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
 			if tc.want.error != nil {
 				assert.Contains(t, err.Error(), tc.want.error.Error())
@@ -256,13 +256,13 @@ func TestGetFullURL(t *testing.T) {
 	}
 	cases := []struct {
 		name  string
-		links linkhelpers.URLLinks
+		links *storage.MapStorage
 		id    string
 		want  want
 	}{
 		{
 			"get existed link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"1",
 			want{
 				"https://dzen.ru",
@@ -271,17 +271,17 @@ func TestGetFullURL(t *testing.T) {
 		},
 		{
 			"get non-existed link",
-			linkhelpers.URLLinks{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
+			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
 			"2",
 			want{
 				"",
-				errors.New("no such id"),
+				errors.New("not found"),
 			},
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			url, err := tc.links.GetFullURL(tc.id)
+			url, err := tc.links.GetLong(tc.id)
 			if tc.want.error != nil {
 				assert.Equal(t, tc.want.error, err)
 			} else {
