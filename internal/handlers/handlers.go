@@ -1,62 +1,86 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/size12/url-shortener/internal/linkhelpers"
+	"github.com/size12/url-shortener/internal/storage"
 )
 
-func PingHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+func PingHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if links.DB != nil {
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-			defer cancel()
-			if err := links.DB.PingContext(ctx); err != nil {
-				http.Error(w, "DataBase is not working", 500)
-				return
-			}
-			w.WriteHeader(200)
-		} else {
-			http.Error(w, "DataBase is not working", 500)
-			return
+		err := s.Ping()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "wrong method", 400)
+	http.Error(w, "wrong method", http.StatusBadRequest)
 }
 
-func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+func DeleteHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		userID := userCookie.Value
-		_ = userID
 
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil || string(resBody) == "" {
-			http.Error(w, "wrong body", 400)
+			http.Error(w, "wrong body", http.StatusBadRequest)
 			return
 		}
 
-		var reqURLs []linkhelpers.BatchJSON
-		var respURLs []linkhelpers.BatchJSON
+		var toDelete []string
+		err = json.Unmarshal(resBody, &toDelete)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = s.Delete(userID, toDelete...)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func URLBatchHandler(s storage.Storage) http.HandlerFunc {
+	cfg := s.GetConfig()
+	return func(w http.ResponseWriter, r *http.Request) {
+		userCookie, err := r.Cookie("userID")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		userID := userCookie.Value
+
+		resBody, err := io.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil || string(resBody) == "" {
+			http.Error(w, "wrong body", http.StatusBadRequest)
+			return
+		}
+
+		var reqURLs []storage.BatchJSON
+		var respURLs []storage.BatchJSON
 
 		err = json.Unmarshal(resBody, &reqURLs)
 
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -66,28 +90,28 @@ func URLBatchHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 			urls = append(urls, v.URL)
 		}
 
-		res, err := links.NewShortURL(userID, urls...)
+		res, err := s.CreateShort(userID, urls...)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		for i, v := range reqURLs {
-			respURLs = append(respURLs, linkhelpers.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: links.Cfg.BaseURL + "/" + res[i]})
+			respURLs = append(respURLs, storage.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: cfg.BaseURL + "/" + res[i]})
 		}
 
 		b, err := json.Marshal(respURLs)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(201)
+		w.WriteHeader(http.StatusCreated)
 		w.Write(b)
 	}
 }
 
-func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+func URLHistoryHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")
 		if err != nil {
@@ -96,16 +120,9 @@ func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 		}
 		userID := userCookie.Value
 
-		historyShort := links.Users[userID]
-		var history []linkhelpers.LinkJSON
-
-		for _, short := range historyShort {
-			long, err := links.GetFullURL(short)
-			if err != nil {
-				http.Error(w, err.Error(), 400)
-				return
-			}
-			history = append(history, linkhelpers.LinkJSON{ShortURL: links.Cfg.BaseURL + "/" + short, LongURL: long})
+		history, err := s.GetHistory(userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		if len(history) == 0 {
@@ -115,23 +132,34 @@ func URLHistoryHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 
 		data, err := json.Marshal(history)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.Write(data)
 	}
 }
 
-func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+func URLGetHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if id == "" {
-			http.Error(w, "missing id parameter", 400)
+			http.Error(w, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		url, err := links.GetFullURL(id)
+		url, err := s.GetLong(id)
+
+		if errors.Is(err, storage.Err410) {
+			http.Error(w, "link is deleted", http.StatusGone)
+			return
+		}
+
+		if errors.Is(err, storage.Err404) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -140,7 +168,8 @@ func URLGetHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 	}
 }
 
-func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
+func URLPostHandler(s storage.Storage) http.HandlerFunc {
+	cfg := s.GetConfig()
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")
 		if err != nil {
@@ -151,54 +180,54 @@ func URLPostHandler(links linkhelpers.URLLinks) http.HandlerFunc {
 		resBody, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil || string(resBody) == "" {
-			http.Error(w, "wrong body", 400)
+			http.Error(w, "wrong body", http.StatusBadRequest)
 			return
 		}
 		switch r.Header.Get("Content-Type") {
 		case "application/json":
 			{
-				var reqJSON linkhelpers.RequestJSON
+				var reqJSON storage.RequestJSON
 				err := json.Unmarshal(resBody, &reqJSON)
 				if err != nil {
-					http.Error(w, err.Error(), 400)
+					http.Error(w, err.Error(), http.StatusBadRequest)
 					return
 				}
-				res, err2 := links.NewShortURL(userID, reqJSON.URL)
+				res, err2 := s.CreateShort(userID, reqJSON.URL)
 
-				if err2 != nil && !errors.Is(err2, linkhelpers.Err409) {
-					http.Error(w, err2.Error(), 400)
+				if err2 != nil && !errors.Is(err2, storage.Err409) {
+					http.Error(w, err2.Error(), http.StatusBadRequest)
 					return
 				}
 
-				respJSON, err := json.Marshal(linkhelpers.ResponseJSON{Result: links.Cfg.BaseURL + "/" + res[0]})
+				respJSON, err := json.Marshal(storage.ResponseJSON{Result: cfg.BaseURL + "/" + res[0]})
 
 				if err != nil {
-					http.Error(w, err.Error(), 400)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				if errors.Is(err2, linkhelpers.Err409) {
-					w.WriteHeader(409)
+				if errors.Is(err2, storage.Err409) {
+					w.WriteHeader(http.StatusConflict)
 				} else {
-					w.WriteHeader(201)
+					w.WriteHeader(http.StatusCreated)
 				}
 				w.Write(respJSON)
 			}
 		default:
 			{
-				res, err2 := links.NewShortURL(userID, string(resBody))
-				if err2 != nil && !errors.Is(err2, linkhelpers.Err409) {
+				res, err2 := s.CreateShort(userID, string(resBody))
+				if err2 != nil && !errors.Is(err2, storage.Err409) {
 					http.Error(w, err2.Error(), 400)
 					return
 				}
 				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-				if errors.Is(err2, linkhelpers.Err409) {
-					w.WriteHeader(409)
+				if errors.Is(err2, storage.Err409) {
+					w.WriteHeader(http.StatusConflict)
 				} else {
-					w.WriteHeader(201)
+					w.WriteHeader(http.StatusCreated)
 				}
-				w.Write([]byte(links.Cfg.BaseURL + "/" + res[0]))
+				w.Write([]byte(cfg.BaseURL + "/" + res[0]))
 			}
 
 		}
