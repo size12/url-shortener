@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"log"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -24,13 +25,17 @@ func GetDefaultConfig() Config {
 
 func GetConfig() Config {
 	cfg := GetDefaultConfig()
+
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Server address")
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
 	flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage path")
 	flag.StringVar(&cfg.BasePath, "d", cfg.BasePath, "DataBase path")
 	flag.Parse()
 
-	env.Parse(&cfg)
+	err := env.Parse(&cfg)
+	if err != nil {
+		log.Fatalln("Failed parse config: ", err)
+	}
 
 	return cfg
 }

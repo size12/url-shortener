@@ -3,9 +3,14 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/size12/url-shortener/internal/config"
 )
@@ -35,36 +40,55 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 		return s, err
 	}
 
-	s.DB = db
-
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (id varchar(255), url varchar(255), cookie varchar(255), deleted boolean)")
+	err = MigrateUP(db)
+
+	if err != nil {
+		log.Fatalln("Failed migrate DB: ", err)
+		return s, err
+	}
+
+	row := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM links")
+
+	err = row.Scan(&s.LastID)
+
 	if err != nil {
 		return s, err
 	}
 
-	rows, err := db.QueryContext(ctx, "SELECT COUNT(*) FROM links")
-
+	err = row.Err()
 	if err != nil {
 		return s, err
 	}
 
-	defer rows.Close()
-
-	rows.Next()
-	err = rows.Scan(&s.LastID)
-	if err != nil {
-		return s, err
-	}
-
-	err = rows.Err()
-	if err != nil {
-		return s, err
-	}
+	s.DB = db
 
 	return s, nil
+}
+
+func MigrateUP(db *sql.DB) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Printf("Failed create postgres instance: %v\n", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations",
+		"pgx", driver)
+	if err != nil {
+		log.Printf("Failed create migration instance: %v\n", err)
+		return err
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatal("Failed migrate: ", err)
+		return err
+	}
+
+	return nil
 }
 
 func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error) {
@@ -129,25 +153,18 @@ func (s *DBStorage) GetLong(id string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	rows, err := s.DB.QueryContext(ctx, "SELECT url, deleted FROM links WHERE id=$1 LIMIT 1", id)
-
-	if err != nil {
-		return "", err
-	}
-
-	defer rows.Close()
+	row := s.DB.QueryRowContext(ctx, "SELECT url, deleted FROM links WHERE id=$1 LIMIT 1", id)
 
 	var long string
 	var deleted bool
 
-	rows.Next()
-	err = rows.Scan(&long, &deleted)
+	err := row.Scan(&long, &deleted)
 
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		return "", Err404
 	}
 
-	if err := rows.Err(); err != nil {
+	if err := row.Err(); err != nil {
 		return "", err
 	}
 
