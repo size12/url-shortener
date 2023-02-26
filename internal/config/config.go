@@ -17,11 +17,6 @@ type Config struct {
 	*sync.Once
 }
 
-var (
-	cfg  Config
-	once sync.Once
-)
-
 func GetDefaultConfig() Config {
 	return Config{
 		ServerAddress:   ":8080",
@@ -32,11 +27,14 @@ func GetDefaultConfig() Config {
 	}
 }
 
+var (
+	cfg  = GetDefaultConfig()
+	once sync.Once
+)
+
 func GetConfig() Config {
 
 	once.Do(func() {
-		cfg := GetDefaultConfig()
-
 		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Server address")
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
 		flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage path")
