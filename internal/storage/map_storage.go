@@ -103,11 +103,11 @@ func (s *MapStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	defer s.Unlock()
 
 	historyShort := s.Users[userID]
-	var history []LinkJSON
+	var history = make([]LinkJSON, len(historyShort))
 
-	for _, id := range historyShort {
+	for i, id := range historyShort {
 		long := s.Locations[id]
-		history = append(history, LinkJSON{ShortURL: s.Cfg.BaseURL + "/" + id, LongURL: long})
+		history[i] = LinkJSON{ShortURL: s.Cfg.BaseURL + "/" + id, LongURL: long}
 	}
 	return history, nil
 }
