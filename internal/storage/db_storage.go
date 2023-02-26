@@ -43,14 +43,12 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	if cfg.DoDBMigration {
-		err = MigrateUP(db)
-
-		if err != nil {
-			log.Fatalln("Failed migrate DB: ", err)
-			return s, err
-		}
-	}
+	//err = MigrateUP(db)
+	//
+	//if err != nil {
+	//	log.Fatalln("Failed migrate DB: ", err)
+	//	return s, err
+	//}
 
 	row := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM links")
 
