@@ -3,9 +3,6 @@ package app
 import (
 	"log"
 	"net/http"
-	"os"
-	"runtime"
-	"runtime/pprof"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
@@ -18,16 +15,6 @@ type App struct {
 }
 
 func (app App) Run() error {
-	fmem, err := os.Create(`profiles/base.pprof`)
-	if err != nil {
-		panic(err)
-	}
-	defer fmem.Close()
-	runtime.GC() // получаем статистику по использованию памяти
-	if err := pprof.WriteHeapProfile(fmem); err != nil {
-		panic(err)
-	}
-
 	r := chi.NewRouter()
 	s, err := storage.NewStorage(app.Cfg)
 	if err != nil {

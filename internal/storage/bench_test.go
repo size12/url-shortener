@@ -11,6 +11,7 @@ import (
 
 func BenchmarkDBStorage(b *testing.B) {
 	cfg := config.GetDefaultConfig()
+	cfg.DBMigrationPath = "file://../../migrations"
 	s, err := NewDBStorage(cfg)
 	if err != nil {
 		log.Fatalln("Failed get storage: ", err)
@@ -36,6 +37,29 @@ func BenchmarkDBStorage(b *testing.B) {
 			b.StartTimer()
 
 			s.GetLong(id)
+		}
+	})
+
+	b.Run("Delete urls", func(b *testing.B) {
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			id := fmt.Sprint(rand.Intn(s.LastID))
+			userID := fmt.Sprint(rand.Intn(200))
+			b.StartTimer()
+
+			s.Delete(userID, id)
+		}
+	})
+
+	b.Run("Get history", func(b *testing.B) {
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			userID := fmt.Sprint(rand.Intn(200))
+			b.StartTimer()
+
+			s.GetHistory(userID)
 		}
 	})
 
@@ -68,6 +92,29 @@ func BenchmarkMapStorage(b *testing.B) {
 			b.StartTimer()
 
 			s.GetLong(id)
+		}
+	})
+
+	b.Run("Delete urls", func(b *testing.B) {
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			id := fmt.Sprint(len(s.Locations))
+			userID := fmt.Sprint(rand.Intn(200))
+			b.StartTimer()
+
+			s.Delete(userID, id)
+		}
+	})
+
+	b.Run("Get history", func(b *testing.B) {
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			userID := fmt.Sprint(rand.Intn(200))
+			b.StartTimer()
+
+			s.GetHistory(userID)
 		}
 	})
 

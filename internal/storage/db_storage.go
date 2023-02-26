@@ -43,7 +43,7 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err = MigrateUP(db)
+	err = MigrateUP(db, cfg)
 
 	if err != nil {
 		log.Fatalln("Failed migrate DB: ", err)
@@ -68,15 +68,16 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	return s, nil
 }
 
-func MigrateUP(db *sql.DB) error {
+func MigrateUP(db *sql.DB, cfg config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Printf("Failed create postgres instance: %v\n", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
+		cfg.DBMigrationPath,
 		"pgx", driver)
+
 	if err != nil {
 		log.Printf("Failed create migration instance: %v\n", err)
 		return err
