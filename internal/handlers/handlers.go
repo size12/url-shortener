@@ -95,6 +95,7 @@ func URLBatchHandler(s storage.Storage) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		for i, v := range reqURLs {
 			respURLs = append(respURLs, storage.BatchJSON{CorrelationID: v.CorrelationID, ShortURL: cfg.BaseURL + "/" + res[i]})
 		}
