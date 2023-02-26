@@ -43,7 +43,8 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	fmt.Println("Trying create DB with config: ", cfg)
+	fmt.Printf("Trying create DB with config: %+v\n", cfg)
+	fmt.Printf("DB address: '%s'\n", cfg.BasePath)
 
 	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (id varchar(255), url varchar(255), cookie varchar(255), deleted boolean)")
 	if err != nil {
