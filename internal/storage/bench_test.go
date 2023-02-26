@@ -11,6 +11,7 @@ import (
 
 func BenchmarkDBStorage(b *testing.B) {
 	cfg := config.GetDefaultConfig()
+	cfg.DoDBMigration = false
 	s, err := NewDBStorage(cfg)
 	if err != nil {
 		log.Fatalln("Failed get storage: ", err)

@@ -12,6 +12,7 @@ type Config struct {
 	BaseURL       string `env:"BASE_URL"`
 	StoragePath   string `env:"FILE_STORAGE_PATH"`
 	BasePath      string `env:"DATABASE_DSN"`
+	DoDBMigration bool
 }
 
 func GetDefaultConfig() Config {
@@ -20,6 +21,7 @@ func GetDefaultConfig() Config {
 		BaseURL:       "http://127.0.0.1:8080",
 		StoragePath:   "",
 		BasePath:      "",
+		DoDBMigration: true,
 	}
 }
 
