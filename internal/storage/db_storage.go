@@ -43,25 +43,12 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	fmt.Printf("Trying create DB with config: %+v\n", cfg)
-	fmt.Printf("DB address: '%s'\n", cfg.BasePath)
+	err = MigrateUP(db, cfg)
 
-	_, err = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS links (id varchar(255), url varchar(255), cookie varchar(255), deleted boolean)")
 	if err != nil {
+		log.Fatalln("Failed migrate DB: ", err)
 		return s, err
 	}
-
-	//if cfg.DoDBMigration {
-	//	fmt.Println("doing migration")
-	//	err = MigrateUP(db)
-	//
-	//	if err != nil {
-	//		log.Fatalln("Failed migrate DB: ", err)
-	//		return s, err
-	//	}
-	//} else {
-	//	fmt.Println("don't do migration")
-	//}
 
 	row := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM links")
 
@@ -81,14 +68,14 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	return s, nil
 }
 
-func MigrateUP(db *sql.DB) error {
+func MigrateUP(db *sql.DB, cfg config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Printf("Failed create postgres instance: %v\n", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
+		cfg.DBMigrationPath,
 		"pgx", driver)
 
 	if err != nil {
