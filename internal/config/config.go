@@ -1,3 +1,4 @@
+// Package config gets config.
 package config
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/caarlos0/env/v6"
 )
 
+// Config Application config.
 type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS"`
 	BaseURL         string `env:"BASE_URL"`
@@ -27,6 +29,7 @@ func GetDefaultConfig() Config {
 	}
 }
 
+// Singleton config creation variables
 var (
 	cfg  = GetDefaultConfig()
 	once sync.Once

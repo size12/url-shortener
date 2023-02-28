@@ -9,6 +9,7 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 )
 
+// MapStorage is storage that storages in map.
 type MapStorage struct {
 	Cfg       config.Config
 	Locations map[string]string
@@ -24,6 +25,8 @@ func NewMapStorage(cfg config.Config) (*MapStorage, error) {
 
 	return &MapStorage{Locations: loc, Users: users, Deleted: deleted, Cfg: cfg, Mutex: &sync.Mutex{}}, nil
 }
+
+// Interface storage.Storage implementation
 
 func (s *MapStorage) GetConfig() config.Config {
 	return s.Cfg

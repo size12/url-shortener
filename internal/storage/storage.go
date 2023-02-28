@@ -1,3 +1,4 @@
+// Package storage creates storage and stores data in it.
 package storage
 
 import (
@@ -6,12 +7,14 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 )
 
+// Errors for storage response.
 var (
 	Err409 = errors.New("link is already in storage")
 	Err410 = errors.New("link is deleted, sorry :(")
 	Err404 = errors.New("not found")
 )
 
+// Storage is an interface that describes storage.
 type Storage interface {
 	CreateShort(userID string, urls ...string) ([]string, error)
 	GetLong(id string) (string, error)
@@ -32,6 +35,8 @@ func NewStorage(cfg config.Config) (Storage, error) {
 
 	return NewMapStorage(cfg)
 }
+
+// Structs for response
 
 type LinkJSON struct {
 	ShortURL string `json:"short_url"`

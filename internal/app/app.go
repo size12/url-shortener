@@ -1,3 +1,4 @@
+// Package app - package that creates service and runs it.
 package app
 
 import (
@@ -10,10 +11,12 @@ import (
 	"github.com/size12/url-shortener/internal/storage"
 )
 
+// App is struct of service
 type App struct {
 	Cfg config.Config
 }
 
+// Run starts service.
 func (app App) Run() error {
 	r := chi.NewRouter()
 	s, err := storage.NewStorage(app.Cfg)

@@ -1,3 +1,4 @@
+//Package handlers gets handlers for service endpoints.
 package handlers
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/size12/url-shortener/internal/storage"
 )
 
+// PingHandler checks if storage works.
 func PingHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := s.Ping()
@@ -20,10 +22,13 @@ func PingHandler(s storage.Storage) http.HandlerFunc {
 	}
 }
 
+// URLErrorHandler returns error, if someone gets wrong page.
 func URLErrorHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "wrong method", http.StatusBadRequest)
 }
 
+// DeleteHandler deletes link from storage.
+// You can delete link, only if you've created it.
 func DeleteHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")
@@ -57,6 +62,7 @@ func DeleteHandler(s storage.Storage) http.HandlerFunc {
 	}
 }
 
+// URLBatchHandler shortens batch of urls in single request.
 func URLBatchHandler(s storage.Storage) http.HandlerFunc {
 	cfg := s.GetConfig()
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +118,7 @@ func URLBatchHandler(s storage.Storage) http.HandlerFunc {
 	}
 }
 
+// URLHistoryHandler gets history of your urls.
 func URLHistoryHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userCookie, err := r.Cookie("userID")
@@ -140,6 +147,7 @@ func URLHistoryHandler(s storage.Storage) http.HandlerFunc {
 	}
 }
 
+// URLGetHandler sends person to page, which url was shortened.
 func URLGetHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
@@ -169,6 +177,7 @@ func URLGetHandler(s storage.Storage) http.HandlerFunc {
 	}
 }
 
+// URLPostHandler creates new short URL.
 func URLPostHandler(s storage.Storage) http.HandlerFunc {
 	cfg := s.GetConfig()
 	return func(w http.ResponseWriter, r *http.Request) {

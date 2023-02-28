@@ -16,20 +16,24 @@ import (
 
 //compress response
 
+// secretKey is key for cookie auth.
 var secretKey = []byte("super secret key")
 
 //[32 bytes signature][8 bytes userID]
 
+// gzipWriter struct for sending gzip packed response.
 type gzipWriter struct {
 	http.ResponseWriter
 	Writer io.Writer
 }
 
+// Write - sends gzip packed response.
 func (w gzipWriter) Write(b []byte) (int, error) {
 	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
 	return w.Writer.Write(b)
 }
 
+// generateRandom generates random bytes for cookie authentication.
 func generateRandom(size int) ([]byte, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)
@@ -39,6 +43,7 @@ func generateRandom(size int) ([]byte, error) {
 	return b, nil
 }
 
+// CookieMiddleware check if user is authorized.
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Cookie("userID")
@@ -80,6 +85,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// GzipRequest accepts gzip request.
 func GzipRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
@@ -99,6 +105,7 @@ func GzipRequest(next http.Handler) http.Handler {
 	})
 }
 
+// GzipHandle sends gzip packed data.
 func GzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// проверяем, что клиент поддерживает gzip-сжатие
