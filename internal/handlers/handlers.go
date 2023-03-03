@@ -4,8 +4,8 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
+	"io"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/storage"
