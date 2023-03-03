@@ -188,33 +188,3 @@ func ExampleDeleteHandler() {
 	// URLs in storage are: map[1:https://yandex.ru 2:https://google.com]
 	// Links which deleted: map[1:true]
 }
-
-//
-//func ExampleURLHistoryHandler() {
-//	cfg := config.GetDefaultConfig()
-//	s, err := storage.NewMapStorage(cfg)
-//
-//	if err != nil {
-//		log.Fatal("Failed get storage")
-//	}
-//	// надо добавить ссылки
-//	// потом получить их в истории
-//
-//	request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(""))
-//	request.Header.Set("Content-Type", "application/json")
-//	w := httptest.NewRecorder()
-//	cfg := config.GetDefaultConfig()
-//	tc.links.Cfg = cfg
-//	h := URLPostHandler(tc.links)
-//	expiration := time.Now().Add(365 * 24 * time.Hour)
-//	cookieString := "123456"
-//	cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
-//	request.AddCookie(&cookie)
-//	h.ServeHTTP(w, request)
-//	res := w.Result()
-//	assert.Equal(t, tc.want.code, res.StatusCode)
-//	_, err := io.ReadAll(res.Body)
-//	defer res.Body.Close()
-//	assert.NoError(t, err)
-//	assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
-//}
