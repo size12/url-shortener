@@ -36,7 +36,7 @@ func NewStorage(cfg config.Config) (Storage, error) {
 	return NewMapStorage(cfg)
 }
 
-// Structs for response
+// Structs for response.
 
 type LinkJSON struct {
 	ShortURL string `json:"short_url"`

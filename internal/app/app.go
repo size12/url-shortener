@@ -11,7 +11,7 @@ import (
 	"github.com/size12/url-shortener/internal/storage"
 )
 
-// App is struct of service
+// App is struct of service.
 type App struct {
 	Cfg config.Config
 }

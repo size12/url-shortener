@@ -16,14 +16,14 @@ import (
 )
 
 // DBStorage is storage that uses DB.
-// Implements storage.Storage interface
+// Implements storage.Storage interface.
 type DBStorage struct {
 	Cfg    config.Config
 	DB     *sql.DB
 	LastID int
 }
 
-// Interface storage.Storage implementation
+// Interface storage.Storage implementation.
 
 func (s *DBStorage) GetConfig() config.Config {
 	return s.Cfg

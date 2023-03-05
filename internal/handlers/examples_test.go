@@ -103,7 +103,7 @@ func ExampleURLHistoryHandler() {
 		log.Fatal("Failed get storage")
 	}
 
-	// creating short urls
+	// creating short urls.
 	_, err = s.CreateShort(userID, "https://yandex.ru")
 
 	if err != nil {
@@ -152,7 +152,7 @@ func ExampleDeleteHandler() {
 		log.Fatal("Failed get storage")
 	}
 
-	// creating short urls
+	// creating short urls.
 	_, err = s.CreateShort(userID, "https://yandex.ru")
 
 	if err != nil {

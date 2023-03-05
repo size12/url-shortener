@@ -1,4 +1,4 @@
-//Package handlers gets handlers for service endpoints.
+// Package handlers gets handlers for service endpoints.
 package handlers
 
 import (

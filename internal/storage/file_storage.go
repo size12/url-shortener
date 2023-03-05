@@ -102,12 +102,12 @@ func (s *FileStorage) GetLong(id string) (string, error) {
 }
 
 func (s *FileStorage) Delete(userID string, ids ...string) error {
-	//do nothing for file storage
+	// do nothing for file storage.
 	return nil
 }
 
 func (s *FileStorage) GetHistory(userID string) ([]LinkJSON, error) {
-	//return all links
+	// return all links.
 	var history []LinkJSON
 
 	scanner := bufio.NewScanner(s.File)
