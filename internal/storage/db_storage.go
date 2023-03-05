@@ -25,16 +25,19 @@ type DBStorage struct {
 
 // Interface storage.Storage implementation.
 
+// GetConfig gets config from storage.
 func (s *DBStorage) GetConfig() config.Config {
 	return s.Cfg
 }
 
+// Ping check connection to storage.
 func (s *DBStorage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	return s.DB.PingContext(ctx)
 }
 
+// NewDBStorage creates new DB storage.
 func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	s := &DBStorage{Cfg: cfg}
 
@@ -72,6 +75,7 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	return s, nil
 }
 
+// MigrateUP DB migrations.
 func MigrateUP(db *sql.DB, cfg config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
@@ -96,6 +100,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 	return nil
 }
 
+// CreateShort creates short url from long.
 func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error) {
 	var isErr409 error
 	var result []string
@@ -154,6 +159,7 @@ func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error)
 	return result, isErr409
 }
 
+// GetLong gets long url from short.
 func (s *DBStorage) GetLong(id string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -180,6 +186,7 @@ func (s *DBStorage) GetLong(id string) (string, error) {
 	return long, nil
 }
 
+// Delete deletes url.
 func (s *DBStorage) Delete(userID string, ids ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -210,6 +217,7 @@ func (s *DBStorage) Delete(userID string, ids ...string) error {
 	return nil
 }
 
+// GetHistory gets history of links.
 func (s *DBStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	var history []LinkJSON
 

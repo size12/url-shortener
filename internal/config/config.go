@@ -19,6 +19,7 @@ type Config struct {
 	*sync.Once
 }
 
+// GetDefaultConfig gets default config.
 func GetDefaultConfig() Config {
 	return Config{
 		ServerAddress:   ":8080",
@@ -29,12 +30,13 @@ func GetDefaultConfig() Config {
 	}
 }
 
-// Singleton config creation variables
+// Singleton config creation variables.
 var (
 	cfg  = GetDefaultConfig()
 	once sync.Once
 )
 
+// GetConfig gets new config from flags or env.
 func GetConfig() Config {
 
 	once.Do(func() {

@@ -11,6 +11,7 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 )
 
+// FileStorage struct of file storage, implements storage.Storage.
 type FileStorage struct {
 	Cfg    config.Config
 	File   *os.File
@@ -18,14 +19,17 @@ type FileStorage struct {
 	*sync.Mutex
 }
 
+// GetConfig gets config.
 func (s *FileStorage) GetConfig() config.Config {
 	return s.Cfg
 }
 
+// Ping does nothing.
 func (s *FileStorage) Ping() error {
 	return nil
 }
 
+// NewFileStorage creates new file storage.
 func NewFileStorage(cfg config.Config) (*FileStorage, error) {
 	s := &FileStorage{Cfg: cfg, Mutex: &sync.Mutex{}}
 
@@ -55,6 +59,7 @@ func NewFileStorage(cfg config.Config) (*FileStorage, error) {
 	return s, nil
 }
 
+// CreateShort creates short url from long.
 func (s *FileStorage) CreateShort(userID string, urls ...string) ([]string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -82,6 +87,7 @@ func (s *FileStorage) CreateShort(userID string, urls ...string) ([]string, erro
 	return result, nil
 }
 
+// GetLong gets long url from short.
 func (s *FileStorage) GetLong(id string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -101,11 +107,13 @@ func (s *FileStorage) GetLong(id string) (string, error) {
 	return "", Err404
 }
 
+// Delete does nothing.
 func (s *FileStorage) Delete(userID string, ids ...string) error {
 	// do nothing for file storage.
 	return nil
 }
 
+// GetHistory gets history of urls.
 func (s *FileStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	// return all links.
 	var history []LinkJSON

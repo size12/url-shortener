@@ -24,6 +24,7 @@ type Storage interface {
 	GetConfig() config.Config
 }
 
+// NewStorage creates new storage based on config.
 func NewStorage(cfg config.Config) (Storage, error) {
 	if cfg.StoragePath != "" {
 		return NewFileStorage(cfg)
@@ -38,21 +39,25 @@ func NewStorage(cfg config.Config) (Storage, error) {
 
 // Structs for response.
 
+// LinkJSON struct for history response.
 type LinkJSON struct {
 	ShortURL string `json:"short_url"`
 	LongURL  string `json:"original_url"`
 }
 
+// BatchJSON struct for batch request.
 type BatchJSON struct {
 	CorrelationID string `json:"correlation_id,omitempty"`
 	URL           string `json:"original_url,omitempty"`
 	ShortURL      string `json:"short_url,omitempty"`
 }
 
+// RequestJSON struct for single application/json request.
 type RequestJSON struct {
 	URL string `json:"url"`
 }
 
+// ResponseJSON struct for single application/json response.
 type ResponseJSON struct {
 	Result string `json:"result"`
 }
