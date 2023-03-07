@@ -1,3 +1,4 @@
+// Package storage creates storage and stores data in it.
 package storage
 
 import (
@@ -6,10 +7,14 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 )
 
-var Err409 = errors.New("link is already in storage")
-var Err410 = errors.New("link is deleted, sorry :(")
-var Err404 = errors.New("not found")
+// Errors for storage response.
+var (
+	Err409 = errors.New("link is already in storage")
+	Err410 = errors.New("link is deleted, sorry :(")
+	Err404 = errors.New("not found")
+)
 
+// Storage is an interface that describes storage.
 type Storage interface {
 	CreateShort(userID string, urls ...string) ([]string, error)
 	GetLong(id string) (string, error)
@@ -19,6 +24,7 @@ type Storage interface {
 	GetConfig() config.Config
 }
 
+// NewStorage creates new storage based on config.
 func NewStorage(cfg config.Config) (Storage, error) {
 	if cfg.StoragePath != "" {
 		return NewFileStorage(cfg)
@@ -31,21 +37,27 @@ func NewStorage(cfg config.Config) (Storage, error) {
 	return NewMapStorage(cfg)
 }
 
+// Structs for response.
+
+// LinkJSON struct for history response.
 type LinkJSON struct {
 	ShortURL string `json:"short_url"`
 	LongURL  string `json:"original_url"`
 }
 
+// BatchJSON struct for batch request.
 type BatchJSON struct {
 	CorrelationID string `json:"correlation_id,omitempty"`
 	URL           string `json:"original_url,omitempty"`
 	ShortURL      string `json:"short_url,omitempty"`
 }
 
+// RequestJSON struct for single application/json request.
 type RequestJSON struct {
 	URL string `json:"url"`
 }
 
+// ResponseJSON struct for single application/json response.
 type ResponseJSON struct {
 	Result string `json:"result"`
 }

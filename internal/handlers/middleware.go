@@ -14,22 +14,26 @@ import (
 	"time"
 )
 
-//compress response
+// compress response.
 
+// secretKey is key for cookie auth.
 var secretKey = []byte("super secret key")
 
-//[32 bytes signature][8 bytes userID]
+// [32 bytes signature][8 bytes userID].
 
+// gzipWriter struct for sending gzip packed response.
 type gzipWriter struct {
 	http.ResponseWriter
 	Writer io.Writer
 }
 
+// Write - sends gzip packed response.
 func (w gzipWriter) Write(b []byte) (int, error) {
 	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
 	return w.Writer.Write(b)
 }
 
+// generateRandom generates random bytes for cookie authentication.
 func generateRandom(size int) ([]byte, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)
@@ -39,6 +43,7 @@ func generateRandom(size int) ([]byte, error) {
 	return b, nil
 }
 
+// CookieMiddleware check if user is authorized.
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Cookie("userID")
@@ -80,6 +85,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// GzipRequest accepts gzip request.
 func GzipRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
@@ -87,7 +93,7 @@ func GzipRequest(next http.Handler) http.Handler {
 			return
 		}
 
-		// переменная r будет читать входящие данные и распаковывать их
+		// переменная r будет читать входящие данные и распаковывать их.
 		reader, err := gzip.NewReader(r.Body)
 		if err != nil {
 			fmt.Println(err)
@@ -99,17 +105,14 @@ func GzipRequest(next http.Handler) http.Handler {
 	})
 }
 
+// GzipHandle sends gzip packed data.
 func GzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// проверяем, что клиент поддерживает gzip-сжатие
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			// если gzip не поддерживается, передаём управление
-			// дальше без изменений
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// создаём gzip.Writer поверх текущего w
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 		if err != nil {
 			io.WriteString(w, err.Error())
@@ -118,7 +121,6 @@ func GzipHandle(next http.Handler) http.Handler {
 		defer gz.Close()
 
 		w.Header().Set("Content-Encoding", "gzip")
-		// передаём обработчику страницы переменную типа gzipWriter для вывода данных
 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
 	})
 }

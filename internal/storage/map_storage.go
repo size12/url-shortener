@@ -9,6 +9,7 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 )
 
+// MapStorage is storage that storages in map.
 type MapStorage struct {
 	Cfg       config.Config
 	Locations map[string]string
@@ -17,6 +18,7 @@ type MapStorage struct {
 	*sync.Mutex
 }
 
+// NewMapStorage creates new map storage.
 func NewMapStorage(cfg config.Config) (*MapStorage, error) {
 	loc := make(map[string]string)
 	users := make(map[string][]string)
@@ -25,14 +27,19 @@ func NewMapStorage(cfg config.Config) (*MapStorage, error) {
 	return &MapStorage{Locations: loc, Users: users, Deleted: deleted, Cfg: cfg, Mutex: &sync.Mutex{}}, nil
 }
 
+// Interface storage.Storage implementation.
+
+// GetConfig gets config from storage.
 func (s *MapStorage) GetConfig() config.Config {
 	return s.Cfg
 }
 
+// Ping do nothing.
 func (s *MapStorage) Ping() error {
 	return nil
 }
 
+// CreateShort creates short url from long.
 func (s *MapStorage) CreateShort(userID string, urls ...string) ([]string, error) {
 	result := make([]string, 0)
 	s.Lock()
@@ -69,6 +76,7 @@ func (s *MapStorage) CreateShort(userID string, urls ...string) ([]string, error
 	return result, isErr409
 }
 
+// GetLong gets long url from short.
 func (s *MapStorage) GetLong(id string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -82,6 +90,7 @@ func (s *MapStorage) GetLong(id string) (string, error) {
 	return "", Err404
 }
 
+// Delete deletes url.
 func (s *MapStorage) Delete(userID string, ids ...string) error {
 	s.Lock()
 	defer s.Unlock()
@@ -98,16 +107,17 @@ func (s *MapStorage) Delete(userID string, ids ...string) error {
 	return nil
 }
 
+// GetHistory gets history of links.
 func (s *MapStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	s.Lock()
 	defer s.Unlock()
 
 	historyShort := s.Users[userID]
-	var history []LinkJSON
+	var history = make([]LinkJSON, len(historyShort))
 
-	for _, id := range historyShort {
+	for i, id := range historyShort {
 		long := s.Locations[id]
-		history = append(history, LinkJSON{ShortURL: s.Cfg.BaseURL + "/" + id, LongURL: long})
+		history[i] = LinkJSON{ShortURL: s.Cfg.BaseURL + "/" + id, LongURL: long}
 	}
 	return history, nil
 }
