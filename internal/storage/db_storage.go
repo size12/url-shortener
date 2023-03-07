@@ -10,8 +10,6 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/size12/url-shortener/internal/config"
 )
 
@@ -103,7 +101,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 // CreateShort creates short url from long.
 func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error) {
 	var isErr409 error
-	var result []string
+	result := make([]string, 0, len(urls))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
