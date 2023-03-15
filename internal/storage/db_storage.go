@@ -51,7 +51,7 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	err = MigrateUP(db, cfg)
 
 	if err != nil {
-		log.Fatalln("Failed migrate DB: ", err)
+		log.Println("Failed migrate DB: ", err)
 		return s, err
 	}
 
@@ -78,6 +78,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Printf("Failed create postgres instance: %v\n", err)
+		return err
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
@@ -91,7 +92,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		log.Fatal("Failed migrate: ", err)
+		log.Println("Failed migrate: ", err)
 		return err
 	}
 

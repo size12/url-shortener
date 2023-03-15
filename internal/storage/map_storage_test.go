@@ -233,3 +233,11 @@ func TestMapStorage_GetHistory(t *testing.T) {
 	}
 
 }
+
+func TestMapStorage_Ping(t *testing.T) {
+	cfg := config.GetDefaultConfig()
+	s, err := NewMapStorage(cfg)
+	assert.NoError(t, err)
+
+	assert.NoError(t, s.Ping(), "failed ping test")
+}

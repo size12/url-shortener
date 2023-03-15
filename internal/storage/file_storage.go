@@ -82,10 +82,10 @@ func (s *FileStorage) CreateShort(userID string, urls ...string) ([]string, erro
 	if err != nil {
 		return nil, err
 	}
-	err = s.File.Sync()
-	if err != nil {
-		return nil, err
-	}
+	//err = s.File.Sync()
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return result, nil
 }
@@ -120,6 +120,11 @@ func (s *FileStorage) Delete(userID string, ids ...string) error {
 func (s *FileStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	// return all links.
 	var history []LinkJSON
+
+	_, err := s.File.Seek(0, io.SeekStart)
+	if err != nil {
+		return history, err
+	}
 
 	scanner := bufio.NewScanner(s.File)
 	id := 0
