@@ -129,10 +129,10 @@ func TestFileStorage_GetLong(t *testing.T) {
 		_, err = s.CreateShort("user12", test.urls...)
 		assert.NoError(t, err)
 
-		var longUrl string
-		longUrl, err = s.GetLong(test.id)
+		var longURL string
+		longURL, err = s.GetLong(test.id)
 		assert.Equal(t, test.err, err)
-		assert.Equal(t, test.want, longUrl)
+		assert.Equal(t, test.want, longURL)
 	}
 
 	assert.NoError(t, s.Ping())

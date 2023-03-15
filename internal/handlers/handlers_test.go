@@ -215,6 +215,7 @@ func TestPingHandler(t *testing.T) {
 	request.AddCookie(&cookie)
 	h.ServeHTTP(w, request)
 	res := w.Result()
+	defer res.Body.Close()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 }
