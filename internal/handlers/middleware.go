@@ -47,7 +47,7 @@ func generateRandom(size int) ([]byte, error) {
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Cookie("userID")
-		if ok == nil { //check if cookie is valid
+		if ok == nil { // check if cookie is valid.
 			id, err := hex.DecodeString(userID.Value)
 			if err != nil || len(id) != 40 {
 				http.Error(w, err.Error(), 400)

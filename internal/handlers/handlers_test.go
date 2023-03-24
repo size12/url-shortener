@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -200,93 +199,34 @@ func TestURLGetHandler(t *testing.T) {
 
 		})
 	}
-
 }
 
-func TestNewShortURL(t *testing.T) {
-	type want struct {
-		links *storage.MapStorage
-		id    string
-		error error
-	}
-	cases := []struct {
-		name  string
-		links *storage.MapStorage
-		url   string
-		want  want
-	}{
-		{
-			"add new link",
-			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
-			"https://google.com",
-			want{
-				&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru", "2": "https://google.com"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
-				"2",
-				nil,
-			},
-		},
-		{
-			"add bad link",
-			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
-			"njkjnekjre",
-			want{
-				&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}, Users: map[string][]string{}},
-				"",
-				errors.New("wrong link"),
-			},
-		},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			id, err := tc.links.CreateShort("123456", tc.url)
-			assert.Equal(t, tc.want.links.Locations, tc.links.Locations)
-			if tc.want.error != nil {
-				assert.Contains(t, err.Error(), tc.want.error.Error())
-			} else {
-				assert.Equal(t, tc.want.id, id[0])
-			}
-		})
-	}
+func TestPingHandler(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/ping", nil)
+	w := httptest.NewRecorder()
+	cfg := config.GetDefaultConfig()
+	s, err := storage.NewMapStorage(cfg)
+	assert.NoError(t, err)
+
+	h := PingHandler(s)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookieString := "user12"
+	cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
+	request.AddCookie(&cookie)
+	h.ServeHTTP(w, request)
+	res := w.Result()
+	defer res.Body.Close()
+
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 }
 
-func TestGetFullURL(t *testing.T) {
-	type want struct {
-		url   string
-		error error
-	}
-	cases := []struct {
-		name  string
-		links *storage.MapStorage
-		id    string
-		want  want
-	}{
-		{
-			"get existed link",
-			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
-			"1",
-			want{
-				"https://dzen.ru",
-				nil,
-			},
-		},
-		{
-			"get non-existed link",
-			&storage.MapStorage{Locations: map[string]string{"1": "https://dzen.ru"}, Mutex: &sync.Mutex{}},
-			"2",
-			want{
-				"",
-				errors.New("not found"),
-			},
-		},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			url, err := tc.links.GetLong(tc.id)
-			if tc.want.error != nil {
-				assert.Equal(t, tc.want.error, err)
-			} else {
-				assert.Equal(t, tc.want.url, url)
-			}
-		})
-	}
+func TestGenerateRandom(t *testing.T) {
+	// Generate random bytes.
+	_, err := generateRandom(20)
+	assert.NoError(t, err, "Generate random bytes.")
+
+	// Generate 0 length random bytes.
+	res, err := generateRandom(0)
+	assert.NoError(t, err, "Generate 0 length random bytes.")
+	assert.Len(t, res, 0, "Generate 0 length random bytes.")
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/size12/url-shortener/internal/config"
@@ -66,23 +67,25 @@ func (s *FileStorage) CreateShort(userID string, urls ...string) ([]string, erro
 
 	s.File.Seek(2, io.SeekEnd)
 
-	var buffer string
-	var result []string
+	result := make([]string, 0, len(urls))
+
+	var builder strings.Builder
 
 	for _, long := range urls {
-		buffer += long + "\n"
+		builder.WriteString(long)
+		builder.WriteRune('\n')
 		s.LastID++
 		result = append(result, fmt.Sprint(s.LastID))
 	}
 
-	_, err := s.File.Write([]byte(buffer))
+	_, err := s.File.Write([]byte(builder.String()))
 	if err != nil {
 		return nil, err
 	}
-	err = s.File.Sync()
-	if err != nil {
-		return nil, err
-	}
+	//err = s.File.Sync()
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return result, nil
 }
@@ -117,6 +120,11 @@ func (s *FileStorage) Delete(userID string, ids ...string) error {
 func (s *FileStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	// return all links.
 	var history []LinkJSON
+
+	_, err := s.File.Seek(0, io.SeekStart)
+	if err != nil {
+		return history, err
+	}
 
 	scanner := bufio.NewScanner(s.File)
 	id := 0

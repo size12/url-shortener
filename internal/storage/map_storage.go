@@ -41,7 +41,7 @@ func (s *MapStorage) Ping() error {
 
 // CreateShort creates short url from long.
 func (s *MapStorage) CreateShort(userID string, urls ...string) ([]string, error) {
-	result := make([]string, 0)
+	result := make([]string, 0, len(urls))
 	s.Lock()
 	defer s.Unlock()
 

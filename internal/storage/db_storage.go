@@ -10,8 +10,6 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/size12/url-shortener/internal/config"
 )
 
@@ -53,7 +51,7 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	err = MigrateUP(db, cfg)
 
 	if err != nil {
-		log.Fatalln("Failed migrate DB: ", err)
+		log.Println("Failed migrate DB: ", err)
 		return s, err
 	}
 
@@ -80,6 +78,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Printf("Failed create postgres instance: %v\n", err)
+		return err
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
@@ -93,7 +92,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		log.Fatal("Failed migrate: ", err)
+		log.Println("Failed migrate: ", err)
 		return err
 	}
 
@@ -103,7 +102,7 @@ func MigrateUP(db *sql.DB, cfg config.Config) error {
 // CreateShort creates short url from long.
 func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error) {
 	var isErr409 error
-	var result []string
+	result := make([]string, 0, len(urls))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -121,9 +120,11 @@ func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error)
 	}
 	defer stmt.Close()
 
+	var rows *sql.Rows
+
 	for _, url := range urls {
 		var isAdded bool
-		rows, err := s.DB.QueryContext(ctx, "SELECT id FROM links WHERE url = $1 LIMIT 1", url)
+		rows, err = s.DB.QueryContext(ctx, "SELECT id FROM links WHERE url = $1 LIMIT 1", url)
 		if err != nil {
 			return result, err
 		}
@@ -138,13 +139,13 @@ func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error)
 			result = append(result, id)
 		}
 
-		if err := rows.Err(); err != nil {
+		if err = rows.Err(); err != nil {
 			return result, err
 		}
 		if !isAdded {
 			s.LastID++
 			newID := fmt.Sprint(s.LastID)
-			if _, err := stmt.ExecContext(ctx, newID, url, userID, false); err != nil {
+			if _, err = stmt.ExecContext(ctx, newID, url, userID, false); err != nil {
 				return result, err
 			}
 			result = append(result, newID)
@@ -204,7 +205,7 @@ func (s *DBStorage) Delete(userID string, ids ...string) error {
 	}
 
 	for _, id := range ids {
-		if _, err := stmt.ExecContext(ctx, id, userID); err != nil {
+		if _, err = stmt.ExecContext(ctx, id, userID); err != nil {
 			return err
 		}
 	}
