@@ -4,11 +4,13 @@ package app
 import (
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/handlers"
 	"github.com/size12/url-shortener/internal/storage"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 // App is struct of service.
@@ -20,11 +22,27 @@ type App struct {
 func (app App) Run() error {
 	r := chi.NewRouter()
 	s, err := storage.NewStorage(app.Cfg)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	server := http.Server{Addr: app.Cfg.ServerAddress, Handler: r}
+	baseURL, err := url.Parse(app.Cfg.BaseURL)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	manager := &autocert.Manager{
+		Cache:      autocert.DirCache("cache-dir"),
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(baseURL.Host),
+	}
+
+	server := &http.Server{
+		Addr:      app.Cfg.ServerAddress,
+		Handler:   r,
+		TLSConfig: manager.TLSConfig(),
+	}
 
 	r.Use(handlers.CookieMiddleware)
 	r.Use(handlers.GzipHandle)
@@ -38,6 +56,10 @@ func (app App) Run() error {
 	r.Post("/", handlers.URLPostHandler(s))
 	r.Post("/api/shorten/batch", handlers.URLBatchHandler(s))
 	r.Post("/api/shorten", handlers.URLPostHandler(s))
+
+	if app.Cfg.EnableHTTPS {
+		return server.ListenAndServeTLS("", "")
+	}
 
 	return server.ListenAndServe()
 }

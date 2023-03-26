@@ -15,6 +15,7 @@ type Config struct {
 	BaseURL         string `env:"BASE_URL"`
 	StoragePath     string `env:"FILE_STORAGE_PATH"`
 	BasePath        string `env:"DATABASE_DSN"`
+	EnableHTTPS     bool   `env:"ENABLE_HTTPS"`
 	DBMigrationPath string
 	*sync.Once
 }
@@ -27,6 +28,7 @@ func GetDefaultConfig() Config {
 		StoragePath:     "",
 		BasePath:        "",
 		DBMigrationPath: "file://migrations",
+		EnableHTTPS:     false,
 	}
 }
 
@@ -44,6 +46,7 @@ func GetConfig() Config {
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
 		flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage path")
 		flag.StringVar(&cfg.BasePath, "d", cfg.BasePath, "DataBase path")
+		flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "Enable HTTPS")
 		flag.Parse()
 
 		err := env.Parse(&cfg)
