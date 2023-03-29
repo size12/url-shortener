@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -20,7 +19,7 @@ func main() {
 	printBuildInfo()
 	cfg := config.GetConfig()
 	service := app.App{Cfg: cfg}
-	log.Fatal(service.Run())
+	service.Run()
 }
 
 func printBuildInfo() {

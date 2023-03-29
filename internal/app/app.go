@@ -2,9 +2,13 @@
 package app
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
@@ -19,7 +23,7 @@ type App struct {
 }
 
 // Run starts service.
-func (app App) Run() error {
+func (app App) Run() {
 	r := chi.NewRouter()
 	s, err := storage.NewStorage(app.Cfg)
 
@@ -57,9 +61,28 @@ func (app App) Run() error {
 	r.Post("/api/shorten/batch", handlers.URLBatchHandler(s))
 	r.Post("/api/shorten", handlers.URLPostHandler(s))
 
+	idleConnsClosed := make(chan struct{})
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	go func() {
+		<-sigint
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Println("Failed shutdown server:", err)
+		}
+		close(idleConnsClosed)
+	}()
+
 	if app.Cfg.EnableHTTPS {
-		return server.ListenAndServeTLS("", "")
+		if err := server.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+			log.Fatalf("HTTP server ListenAndServeTLS error: %v", err)
+		}
 	}
 
-	return server.ListenAndServe()
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("HTTP server ListenAndServe error: %v", err)
+	}
+
+	<-idleConnsClosed
+	log.Println("Shutdown server gracefully.")
 }
