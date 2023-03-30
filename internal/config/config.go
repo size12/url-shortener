@@ -108,7 +108,7 @@ func GetConfig() Config {
 // changeByPriority changes config by priority.
 func (cfg *Config) changeByPriority(newCfg Config) {
 	values := reflect.ValueOf(newCfg)
-	oldValues := reflect.ValueOf(&cfg).Elem()
+	oldValues := reflect.ValueOf(cfg).Elem()
 
 	for j := 0; j < values.NumField(); j++ {
 		if !values.Field(j).IsZero() {

@@ -36,6 +36,8 @@ func TestDBStorage(t *testing.T) {
 	cfg := config.GetTestConfig()
 	s, err := NewDBStorage(cfg)
 
+	assert.NoError(t, err)
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual), sqlmock.MonitorPingsOption(true))
 	assert.NoError(t, err, "Create new mock DB storage.")
 	defer db.Close()
@@ -114,35 +116,3 @@ func TestDBStorage(t *testing.T) {
 	assert.Equal(t, ErrPing, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-
-//
-//func TestDBStorage(t *testing.T) {
-//	cfg := config.GetTestConfig()
-//	s, err := NewDBStorage(cfg)
-//	if err != nil {
-//		t.Log("Please run DB. Can't run tests.")
-//		return
-//	}
-//	// Get config.
-//	assert.Equal(t, cfg, s.GetConfig())
-//
-//	// Ping DB.
-//	err = s.Ping()
-//	assert.NoError(t, err)
-//
-//	// Creating short urls.
-//	res, err := s.CreateShort("user12", "https://yandex.ru", "https://google.com")
-//	if err != nil && err != Err409 {
-//		t.Error("Failed create short urls: ", err)
-//		return
-//	}
-//
-//	// Getting long url.
-//	long, err := s.GetLong(res[0])
-//	if err != nil && err != Err404 {
-//		t.Error("Failed create short urls: ", err)
-//		return
-//	}
-//
-//	assert.Equal(t, "https://yandex.ru", long)
-//}
