@@ -10,7 +10,7 @@ import (
 )
 
 func BenchmarkDBStorage(b *testing.B) {
-	var cfg = config.GetBenchConfig()
+	var cfg = config.GetConfig()
 
 	s, err := NewDBStorage(cfg)
 	if err != nil {

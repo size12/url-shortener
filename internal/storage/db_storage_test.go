@@ -132,7 +132,7 @@ func TestDBStorage(t *testing.T) {
 	mock.ExpectQuery("SELECT url, deleted FROM links WHERE id=$1 LIMIT 1").WithArgs("3").
 		WillReturnRows(sqlmock.NewRows([]string{"url", "deleted"}))
 
-	longURL, err = s.GetLong("3")
+	_, err = s.GetLong("3")
 	assert.Equal(t, Err404, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 
@@ -141,7 +141,7 @@ func TestDBStorage(t *testing.T) {
 	mock.ExpectQuery("SELECT url, deleted FROM links WHERE id=$1 LIMIT 1").WithArgs("1").
 		WillReturnRows(sqlmock.NewRows([]string{"url", "deleted"}).AddRow("https://yandex.ru", false).RowError(0, ErrRow))
 
-	longURL, err = s.GetLong("1")
+	_, err = s.GetLong("1")
 
 	assert.Equal(t, ErrRow, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
