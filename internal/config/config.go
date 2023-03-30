@@ -26,9 +26,6 @@ func GetDefaultConfig() Config {
 	return Config{
 		ServerAddress:   ":8080",
 		BaseURL:         "http://127.0.0.1:8080",
-		StoragePath:     "file_storage.txt",
-		BasePath:        "postgresql://",
-		EnableHTTPS:     false,
 		DBMigrationPath: "file://migrations",
 	}
 }

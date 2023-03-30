@@ -180,7 +180,12 @@ func (s *DBStorage) GetLong(id string) (string, error) {
 		return "", Err404
 	}
 
+	if err != nil {
+		return "", err
+	}
+
 	if err := row.Err(); err != nil {
+		fmt.Println("ROW ERROR")
 		return "", err
 	}
 
