@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"sync"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -27,71 +26,87 @@ func GetDefaultConfig() Config {
 	return Config{
 		ServerAddress:   ":8080",
 		BaseURL:         "http://127.0.0.1:8080",
-		StoragePath:     "",
-		BasePath:        "",
+		StoragePath:     "file_storage.txt",
+		BasePath:        "postgresql://",
+		EnableHTTPS:     false,
 		DBMigrationPath: "file://migrations",
+	}
+}
+
+// GetTestConfig gets config for tests.
+func GetTestConfig() Config {
+	return Config{
+		ServerAddress: ":8080",
+		BaseURL:       "http://127.0.0.1:8081",
+		StoragePath:   "file_storage.txt",
+		BasePath:      "mockedDB",
+		EnableHTTPS:   false,
+	}
+}
+
+// GetBenchConfig gets config for benchmarks.
+func GetBenchConfig() Config {
+	return Config{
+		ServerAddress:   ":8080",
+		BaseURL:         "http://127.0.0.1:8081",
+		StoragePath:     "file_storage.txt",
+		BasePath:        "postgresql://",
+		DBMigrationPath: "file://../../migrations",
 		EnableHTTPS:     false,
 	}
 }
 
-// Singleton config creation variables.
-var (
-	cfg  = GetDefaultConfig()
-	once sync.Once
-)
-
 // GetConfig gets new config from flags or env.
 func GetConfig() Config {
+	cfg := GetDefaultConfig()
 
-	once.Do(func() {
-		cfgFilePath := ""
+	cfgFilePath := ""
 
-		fileCfg := Config{}
-		envCfg := Config{}
-		flagCfg := Config{}
+	fileCfg := Config{}
+	envCfg := Config{}
+	flagCfg := Config{}
 
-		// flag config.
-		flag.StringVar(&flagCfg.ServerAddress, "a", "", "Server address")
-		flag.StringVar(&flagCfg.BaseURL, "b", "", "Base URL")
-		flag.StringVar(&flagCfg.StoragePath, "f", "", "Storage path")
-		flag.StringVar(&flagCfg.BasePath, "d", "", "DataBase path")
-		flag.BoolVar(&flagCfg.EnableHTTPS, "s", false, "Enable HTTPS")
+	// flag config.
+	flag.StringVar(&flagCfg.ServerAddress, "a", "", "Server address")
+	flag.StringVar(&flagCfg.BaseURL, "b", "", "Base URL")
+	flag.StringVar(&flagCfg.StoragePath, "f", "", "Storage path")
+	flag.StringVar(&flagCfg.BasePath, "d", "", "DataBase path")
+	flag.BoolVar(&flagCfg.EnableHTTPS, "s", false, "Enable HTTPS")
 
-		// file config.
-		flag.StringVar(&cfgFilePath, "c", "", "Config file path")
-		flag.StringVar(&cfgFilePath, "config", "", "Config file path")
-		flag.Parse()
+	// file config.
+	flag.StringVar(&cfgFilePath, "c", "", "Config file path")
+	flag.StringVar(&cfgFilePath, "config", "", "Config file path")
+	flag.Parse()
 
-		if cfgFilePath != "" {
-			file, err := os.ReadFile(cfgFilePath)
-			if err != nil {
-				log.Fatalln("Failed parse config file:", err)
-			}
-
-			err = json.Unmarshal(file, &fileCfg)
-			if err != nil {
-				log.Fatalln("Failed unmarshal config file:", err)
-			}
-		}
-
-		// env config.
-
-		err := env.Parse(&envCfg)
+	if cfgFilePath != "" {
+		file, err := os.ReadFile(cfgFilePath)
 		if err != nil {
-			log.Fatalln("Failed parse config:", err)
+			log.Fatalln("Failed parse config file:", err)
 		}
 
-		// change config by priority.
-		changeByPriority(fileCfg)
-		changeByPriority(envCfg)
-		changeByPriority(flagCfg)
-	})
+		err = json.Unmarshal(file, &fileCfg)
+		if err != nil {
+			log.Fatalln("Failed unmarshal config file:", err)
+		}
+	}
+
+	// env config.
+
+	err := env.Parse(&envCfg)
+	if err != nil {
+		log.Fatalln("Failed parse config:", err)
+	}
+
+	// change config by priority.
+	cfg.changeByPriority(fileCfg)
+	cfg.changeByPriority(envCfg)
+	cfg.changeByPriority(flagCfg)
 
 	return cfg
 }
 
 // changeByPriority changes config by priority.
-func changeByPriority(newCfg Config) {
+func (cfg *Config) changeByPriority(newCfg Config) {
 	values := reflect.ValueOf(newCfg)
 	oldValues := reflect.ValueOf(&cfg).Elem()
 

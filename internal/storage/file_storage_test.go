@@ -12,18 +12,22 @@ import (
 
 func TestNewFileStorage(t *testing.T) {
 	// new file storage with good file name
-	cfg := config.Config{StoragePath: "file.txt"}
+	cfg := config.GetTestConfig()
 	_, err := NewFileStorage(cfg)
 	assert.NoError(t, err)
 
+	err = os.RemoveAll(cfg.StoragePath)
+	assert.NoError(t, err)
+
 	// new file storage with empty file name
-	cfg = config.Config{StoragePath: ""}
+	cfg = config.GetTestConfig()
+	cfg.StoragePath = ""
 	_, err = NewFileStorage(cfg)
 	assert.Equal(t, errors.New("empty file path"), err)
 }
 
 func TestFileStorage_GetConfig(t *testing.T) {
-	cfg := config.Config{StoragePath: "file.txt"}
+	cfg := config.GetTestConfig()
 	s, err := NewFileStorage(cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, cfg, s.GetConfig())
@@ -32,7 +36,7 @@ func TestFileStorage_GetConfig(t *testing.T) {
 }
 
 func TestFileStorage_Ping(t *testing.T) {
-	cfg := config.Config{StoragePath: "file.txt"}
+	cfg := config.GetTestConfig()
 	s, err := NewFileStorage(cfg)
 	assert.NoError(t, err)
 	assert.NoError(t, s.Ping())
@@ -41,7 +45,7 @@ func TestFileStorage_Ping(t *testing.T) {
 }
 
 func TestFileStorage_CreateShort(t *testing.T) {
-	cfg := config.Config{StoragePath: "file.txt"}
+	cfg := config.GetTestConfig()
 
 	tc := []struct {
 		name       string
@@ -94,7 +98,7 @@ func TestFileStorage_CreateShort(t *testing.T) {
 }
 
 func TestFileStorage_GetLong(t *testing.T) {
-	cfg := config.Config{StoragePath: "file.txt"}
+	cfg := config.GetTestConfig()
 
 	tc := []struct {
 		name string
@@ -142,42 +146,53 @@ func TestFileStorage_GetLong(t *testing.T) {
 
 func TestFileStorage_Delete(t *testing.T) {
 	// can't delete from file storage
-	cfg := config.Config{StoragePath: "1.txt"}
+	cfg := config.GetTestConfig()
+
 	s, err := NewFileStorage(cfg)
 	assert.NoError(t, err)
 
 	err = s.Delete("user12", "1234") // do nothing.
 	assert.NoError(t, err)
 
-	os.RemoveAll("1.txt")
+	err = os.RemoveAll(cfg.StoragePath)
+	assert.NoError(t, err)
 }
 
 func TestFileStorage_GetHistory(t *testing.T) {
-	cfg := config.Config{StoragePath: "1.txt", BaseURL: "http://127.0.0.1"}
+	cfg := config.GetTestConfig()
+
 	s, err := NewFileStorage(cfg)
 	assert.NoError(t, err)
 
+	// get history from empty file.
+
+	history, err := s.GetHistory("user12")
+
+	assert.NoError(t, err)
+	assert.Empty(t, history)
+
+	// get history from non-empty file.
 	_, err = s.CreateShort("user12", "https://yandex.ru", "https://google.com", "https://youtube.com")
 	assert.NoError(t, err)
 
-	res, err := s.GetHistory("user12")
+	history, err = s.GetHistory("user12")
 	assert.NoError(t, err)
 
 	assert.Equal(t, []LinkJSON{
 		{
-			ShortURL: "http://127.0.0.1/1",
+			ShortURL: cfg.BaseURL + "/1",
 			LongURL:  "https://yandex.ru",
 		},
 		{
-			ShortURL: "http://127.0.0.1/2",
+			ShortURL: cfg.BaseURL + "/2",
 			LongURL:  "https://google.com",
 		},
 		{
-			ShortURL: "http://127.0.0.1/3",
+			ShortURL: cfg.BaseURL + "/3",
 			LongURL:  "https://youtube.com",
 		},
-	}, res)
+	}, history)
 
-	err = os.RemoveAll("1.txt")
+	err = os.RemoveAll(cfg.StoragePath)
 	assert.NoError(t, err)
 }

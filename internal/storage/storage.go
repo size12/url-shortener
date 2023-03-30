@@ -26,12 +26,12 @@ type Storage interface {
 
 // NewStorage creates new storage based on config.
 func NewStorage(cfg config.Config) (Storage, error) {
-	if cfg.StoragePath != "" {
-		return NewFileStorage(cfg)
-	}
-
 	if cfg.BasePath != "" {
 		return NewDBStorage(cfg)
+	}
+
+	if cfg.StoragePath != "" {
+		return NewFileStorage(cfg)
 	}
 
 	return NewMapStorage(cfg)
