@@ -18,6 +18,7 @@ var buildCommit string
 func main() {
 	printBuildInfo()
 	cfg := config.GetConfig()
+
 	service := app.App{Cfg: cfg}
 	service.Run()
 }

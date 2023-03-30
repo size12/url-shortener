@@ -44,19 +44,13 @@ func GetTestConfig() Config {
 // GetBenchConfig gets config for benchmarks.
 func GetBenchConfig() Config {
 	return Config{
-		ServerAddress:   ":8080",
-		BaseURL:         "http://127.0.0.1:8081",
-		StoragePath:     "file_storage.txt",
-		BasePath:        "postgresql://",
 		DBMigrationPath: "file://../../migrations",
-		EnableHTTPS:     false,
 	}
 }
 
-// GetConfig gets new config from flags or env.
+// GetConfig gets new config from flags, env or file.
 func GetConfig() Config {
 	cfg := GetDefaultConfig()
-
 	cfgFilePath := ""
 
 	fileCfg := Config{}
@@ -95,15 +89,15 @@ func GetConfig() Config {
 	}
 
 	// change config by priority.
-	cfg.changeByPriority(fileCfg)
-	cfg.changeByPriority(envCfg)
-	cfg.changeByPriority(flagCfg)
+	cfg.ChangeByPriority(fileCfg)
+	cfg.ChangeByPriority(envCfg)
+	cfg.ChangeByPriority(flagCfg)
 
 	return cfg
 }
 
-// changeByPriority changes config by priority.
-func (cfg *Config) changeByPriority(newCfg Config) {
+// ChangeByPriority changes config by priority.
+func (cfg *Config) ChangeByPriority(newCfg Config) {
 	values := reflect.ValueOf(newCfg)
 	oldValues := reflect.ValueOf(cfg).Elem()
 

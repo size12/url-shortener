@@ -59,12 +59,12 @@ func CookieMiddleware(next http.Handler) http.Handler {
 			h.Write(id)
 			sign := h.Sum(nil)
 			if !hmac.Equal(signSrc, sign) {
-				fmt.Println("failed to verify signature")
+				//fmt.Println("failed to verify signature")
 				ok = errors.New("failed to verify signature")
 			}
 		}
 		if ok != nil {
-			fmt.Println("Generating new cookie")
+			//fmt.Println("Generating new cookie")
 			randomID, err := generateRandom(8)
 			h := hmac.New(sha256.New, secretKey)
 			h.Write(randomID)
@@ -73,10 +73,10 @@ func CookieMiddleware(next http.Handler) http.Handler {
 				http.Error(w, err.Error(), 400)
 			}
 			expiration := time.Now().Add(365 * 24 * time.Hour)
-			fmt.Println("Sign:", sign)
-			fmt.Println("ID:", randomID)
+			//fmt.Println("Sign:", sign)
+			//fmt.Println("ID:", randomID)
 			cookieString := hex.EncodeToString(append(sign, randomID...))
-			fmt.Println("New user cookie is:", cookieString)
+			//fmt.Println("New user cookie is:", cookieString)
 			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
 			http.SetCookie(w, &cookie)
 			r.AddCookie(&cookie)

@@ -10,12 +10,7 @@ import (
 func TestGetBenchConfig(t *testing.T) {
 	cfg := GetBenchConfig()
 	assert.Equal(t, Config{
-		ServerAddress:   ":8080",
-		BaseURL:         "http://127.0.0.1:8081",
-		StoragePath:     "file_storage.txt",
-		BasePath:        "postgresql://",
 		DBMigrationPath: "file://../../migrations",
-		EnableHTTPS:     false,
 	}, cfg)
 }
 
@@ -31,6 +26,7 @@ func TestGetDefaultConfig(t *testing.T) {
 func TestGetConfig(t *testing.T) {
 	os.Args = append(os.Args, "-a", ":9090", "-b", "https://127.0.0.1:9090", "-f", "file.txt", "-d", "", "-s", "-d", "postgresql://")
 	cfg := GetConfig()
+
 	assert.Equal(t, Config{
 		ServerAddress:   ":9090",
 		BaseURL:         "https://127.0.0.1:9090",
@@ -44,7 +40,7 @@ func TestGetConfig(t *testing.T) {
 func TestChangeByPriority(t *testing.T) {
 	cfg := GetTestConfig()
 	newCfg := Config{BaseURL: "https://url-shortener.com"}
-	cfg.changeByPriority(newCfg)
+	cfg.ChangeByPriority(newCfg)
 
 	assert.Equal(t, Config{
 		ServerAddress:   cfg.ServerAddress,
