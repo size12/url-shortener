@@ -10,7 +10,7 @@ import (
 )
 
 func BenchmarkDBStorage(b *testing.B) {
-	var cfg = config.GetConfig()
+	var cfg = config.GetOldConfig()
 	cfg.DBMigrationPath = "file://../../migrations"
 
 	s, err := NewDBStorage(cfg)

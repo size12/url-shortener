@@ -4,9 +4,11 @@ package config
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
+	"sync"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -26,7 +28,10 @@ func GetDefaultConfig() Config {
 	return Config{
 		ServerAddress:   ":8080",
 		BaseURL:         "http://127.0.0.1:8080",
+		StoragePath:     "",
+		BasePath:        "",
 		DBMigrationPath: "file://migrations",
+		EnableHTTPS:     false,
 	}
 }
 
@@ -89,9 +94,38 @@ func GetConfig() Config {
 	}
 
 	// change config by priority.
+	fmt.Println(cfg)
 	cfg.ChangeByPriority(fileCfg)
+	fmt.Println(cfg)
 	cfg.ChangeByPriority(envCfg)
+	fmt.Println(cfg)
 	cfg.ChangeByPriority(flagCfg)
+	fmt.Println(cfg)
+
+	return cfg
+}
+
+var (
+	cfg  = GetDefaultConfig()
+	once sync.Once
+)
+
+// GetOldConfig gets new config from flags or env.
+func GetOldConfig() Config {
+
+	once.Do(func() {
+		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Server address")
+		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL")
+		flag.StringVar(&cfg.StoragePath, "f", cfg.StoragePath, "Storage path")
+		flag.StringVar(&cfg.BasePath, "d", cfg.BasePath, "DataBase path")
+		flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "Enable HTTPS")
+		flag.Parse()
+
+		err := env.Parse(&cfg)
+		if err != nil {
+			log.Fatalln("Failed parse config: ", err)
+		}
+	})
 
 	return cfg
 }
