@@ -4,7 +4,6 @@ package config
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -90,7 +89,6 @@ func GetConfig() Config {
 	}
 
 	// change config by priority.
-	fmt.Println(fileCfg, envCfg, flagCfg)
 	cfg.ChangeByPriority(fileCfg)
 	cfg.ChangeByPriority(envCfg)
 	cfg.ChangeByPriority(flagCfg)
