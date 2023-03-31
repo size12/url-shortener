@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"sync"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -49,50 +50,56 @@ func GetBenchConfig() Config {
 	}
 }
 
+var (
+	cfg  = GetDefaultConfig()
+	once sync.Once
+)
+
 // GetConfig gets new config from flags, env or file.
 func GetConfig() Config {
-	cfg := GetDefaultConfig()
-	cfgFilePath := ""
+	once.Do(func() {
+		cfgFilePath := ""
 
-	fileCfg := Config{}
-	envCfg := Config{}
-	flagCfg := Config{}
+		fileCfg := Config{}
+		envCfg := Config{}
+		flagCfg := Config{}
 
-	// flag config.
-	flag.StringVar(&flagCfg.ServerAddress, "a", "", "Server address")
-	flag.StringVar(&flagCfg.BaseURL, "b", "", "Base URL")
-	flag.StringVar(&flagCfg.StoragePath, "f", "", "Storage path")
-	flag.StringVar(&flagCfg.BasePath, "d", "", "DataBase path")
-	flag.BoolVar(&flagCfg.EnableHTTPS, "s", false, "Enable HTTPS")
+		// flag config.
+		flag.StringVar(&flagCfg.ServerAddress, "a", "", "Server address")
+		flag.StringVar(&flagCfg.BaseURL, "b", "", "Base URL")
+		flag.StringVar(&flagCfg.StoragePath, "f", "", "Storage path")
+		flag.StringVar(&flagCfg.BasePath, "d", "", "DataBase path")
+		flag.BoolVar(&flagCfg.EnableHTTPS, "s", false, "Enable HTTPS")
 
-	// file config.
-	flag.StringVar(&cfgFilePath, "c", "", "Config file path")
-	flag.StringVar(&cfgFilePath, "config", "", "Config file path")
-	flag.Parse()
+		// file config.
+		flag.StringVar(&cfgFilePath, "c", "", "Config file path")
+		flag.StringVar(&cfgFilePath, "config", "", "Config file path")
+		flag.Parse()
 
-	if cfgFilePath != "" {
-		file, err := os.ReadFile(cfgFilePath)
-		if err != nil {
-			log.Fatalln("Failed parse config file:", err)
+		if cfgFilePath != "" {
+			file, err := os.ReadFile(cfgFilePath)
+			if err != nil {
+				log.Fatalln("Failed parse config file:", err)
+			}
+
+			err = json.Unmarshal(file, &fileCfg)
+			if err != nil {
+				log.Fatalln("Failed unmarshal config file:", err)
+			}
 		}
 
-		err = json.Unmarshal(file, &fileCfg)
+		// env config.
+
+		err := env.Parse(&envCfg)
 		if err != nil {
-			log.Fatalln("Failed unmarshal config file:", err)
+			log.Fatalln("Failed parse config:", err)
 		}
-	}
 
-	// env config.
-
-	err := env.Parse(&envCfg)
-	if err != nil {
-		log.Fatalln("Failed parse config:", err)
-	}
-
-	// change config by priority.
-	cfg.ChangeByPriority(fileCfg)
-	cfg.ChangeByPriority(envCfg)
-	cfg.ChangeByPriority(flagCfg)
+		// change config by priority.
+		cfg.ChangeByPriority(fileCfg)
+		cfg.ChangeByPriority(envCfg)
+		cfg.ChangeByPriority(flagCfg)
+	})
 
 	return cfg
 }
