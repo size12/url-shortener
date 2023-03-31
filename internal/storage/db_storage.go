@@ -37,7 +37,6 @@ func (s *DBStorage) Ping() error {
 
 // NewDBStorage creates new DB storage.
 func NewDBStorage(cfg config.Config) (*DBStorage, error) {
-	fmt.Println("Creating DB:", cfg)
 	s := &DBStorage{Cfg: cfg, LastID: 0}
 
 	if cfg.BasePath == "mockedDB" {

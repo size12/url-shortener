@@ -10,8 +10,13 @@ import (
 )
 
 func BenchmarkDBStorage(b *testing.B) {
-	var cfg = config.GetOldConfig()
-	cfg.DBMigrationPath = "file://../../migrations"
+	var cfg = config.GetConfig()
+	cfg.ChangeByPriority(config.GetBenchConfig())
+
+	if cfg.BasePath == "" {
+		log.Println("DB path is empty, skipping benchmark.")
+		return
+	}
 
 	s, err := NewDBStorage(cfg)
 	if err != nil {
