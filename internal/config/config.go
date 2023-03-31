@@ -4,6 +4,7 @@ package config
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -45,7 +46,6 @@ func GetTestConfig() Config {
 func GetBenchConfig() Config {
 	return Config{
 		DBMigrationPath: "file://../../migrations",
-		StoragePath:     "", // only for 15 increment.
 	}
 }
 
@@ -90,6 +90,7 @@ func GetConfig() Config {
 	}
 
 	// change config by priority.
+	fmt.Println(fileCfg, envCfg, flagCfg)
 	cfg.ChangeByPriority(fileCfg)
 	cfg.ChangeByPriority(envCfg)
 	cfg.ChangeByPriority(flagCfg)
