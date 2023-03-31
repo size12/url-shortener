@@ -14,8 +14,6 @@ func BenchmarkDBStorage(b *testing.B) {
 	var benchCfg = config.GetBenchConfig()
 	cfg.ChangeByPriority(benchCfg)
 
-	fmt.Println(cfg)
-
 	s, err := NewDBStorage(cfg)
 	if err != nil {
 		log.Fatalln("Failed get storage: ", err)

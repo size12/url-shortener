@@ -45,6 +45,7 @@ func GetTestConfig() Config {
 func GetBenchConfig() Config {
 	return Config{
 		DBMigrationPath: "file://../../migrations",
+		StoragePath:     "", // only for 15 increment.
 	}
 }
 
