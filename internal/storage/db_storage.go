@@ -37,7 +37,11 @@ func (s *DBStorage) Ping() error {
 
 // NewDBStorage creates new DB storage.
 func NewDBStorage(cfg config.Config) (*DBStorage, error) {
-	s := &DBStorage{Cfg: cfg}
+	s := &DBStorage{Cfg: cfg, LastID: 0}
+
+	if cfg.BasePath == "mockedDB" {
+		return s, nil
+	}
 
 	db, err := sql.Open("pgx", cfg.BasePath)
 
@@ -48,7 +52,7 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err = MigrateUP(db, cfg)
+	err = migrateUP(db, cfg)
 
 	if err != nil {
 		log.Println("Failed migrate DB: ", err)
@@ -73,8 +77,8 @@ func NewDBStorage(cfg config.Config) (*DBStorage, error) {
 	return s, nil
 }
 
-// MigrateUP DB migrations.
-func MigrateUP(db *sql.DB, cfg config.Config) error {
+// migrateUP DB migrations.
+func migrateUP(db *sql.DB, cfg config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Printf("Failed create postgres instance: %v\n", err)
@@ -123,7 +127,7 @@ func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error)
 	var rows *sql.Rows
 
 	for _, url := range urls {
-		var isAdded bool
+		var alreadyAdded bool
 		rows, err = s.DB.QueryContext(ctx, "SELECT id FROM links WHERE url = $1 LIMIT 1", url)
 		if err != nil {
 			return result, err
@@ -135,14 +139,14 @@ func (s *DBStorage) CreateShort(userID string, urls ...string) ([]string, error)
 				return result, err
 			}
 			isErr409 = Err409
-			isAdded = true
+			alreadyAdded = true
 			result = append(result, id)
 		}
 
 		if err = rows.Err(); err != nil {
 			return result, err
 		}
-		if !isAdded {
+		if !alreadyAdded {
 			s.LastID++
 			newID := fmt.Sprint(s.LastID)
 			if _, err = stmt.ExecContext(ctx, newID, url, userID, false); err != nil {
@@ -176,7 +180,12 @@ func (s *DBStorage) GetLong(id string) (string, error) {
 		return "", Err404
 	}
 
+	if err != nil {
+		return "", err
+	}
+
 	if err := row.Err(); err != nil {
+		fmt.Println("ROW ERROR")
 		return "", err
 	}
 

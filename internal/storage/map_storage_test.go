@@ -9,7 +9,7 @@ import (
 )
 
 func TestMapStorage_CreateShort(t *testing.T) {
-	cfg := config.Config{}
+	cfg := config.GetTestConfig()
 
 	tc := []struct {
 		name string
@@ -74,28 +74,30 @@ func TestMapStorage_CreateShort(t *testing.T) {
 }
 
 func TestMapStorage_GetConfig(t *testing.T) {
-	cfg := config.GetDefaultConfig()
+	cfg := config.GetTestConfig()
 	s, err := NewMapStorage(cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, cfg, s.GetConfig())
 }
 
 func TestMapStorage_GetLong(t *testing.T) {
-	cfg := config.Config{}
+	cfg := config.GetTestConfig()
 
 	s, err := NewMapStorage(cfg)
 	assert.NoError(t, err)
 
 	tc := []struct {
-		name   string
-		loc    map[string]string
-		id     string
-		result string
-		err    error
+		name    string
+		loc     map[string]string
+		deleted map[string]bool
+		id      string
+		result  string
+		err     error
 	}{
 		{
 			"Get long exists url",
 			map[string]string{"1": "https://yandex.ru"},
+			map[string]bool{"1": false},
 			"1",
 			"https://yandex.ru",
 			nil,
@@ -103,14 +105,24 @@ func TestMapStorage_GetLong(t *testing.T) {
 		{
 			"Get long non-exists url",
 			map[string]string{"1": "https://yandex.ru"},
+			map[string]bool{"1": false},
 			"2",
 			"",
 			Err404,
+		},
+		{
+			"Get long deleted url",
+			map[string]string{"1": "https://yandex.ru"},
+			map[string]bool{"1": true},
+			"1",
+			"https://yandex.ru",
+			Err410,
 		},
 	}
 
 	for _, test := range tc {
 		s.Locations = test.loc
+		s.Deleted = test.deleted
 		res, err := s.GetLong(test.id)
 		assert.Equal(t, test.err, err, test.name)
 		assert.Equal(t, test.result, res, test.name)
@@ -118,7 +130,7 @@ func TestMapStorage_GetLong(t *testing.T) {
 }
 
 func TestMapStorage_Delete(t *testing.T) {
-	cfg := config.GetDefaultConfig()
+	cfg := config.GetTestConfig()
 	s, err := NewMapStorage(cfg)
 	assert.NoError(t, err)
 
@@ -168,7 +180,7 @@ func TestMapStorage_Delete(t *testing.T) {
 }
 
 func TestMapStorage_GetHistory(t *testing.T) {
-	cfg := config.Config{BaseURL: "http://127.0.0.1"}
+	cfg := config.GetTestConfig()
 	s, err := NewMapStorage(cfg)
 	assert.NoError(t, err)
 
@@ -200,7 +212,7 @@ func TestMapStorage_GetHistory(t *testing.T) {
 			"user1",
 			[]LinkJSON{
 				{
-					ShortURL: cfg.BaseURL + "/" + "1",
+					ShortURL: cfg.BaseURL + "/1",
 					LongURL:  "https://yandex.ru",
 				},
 			},
@@ -215,7 +227,7 @@ func TestMapStorage_GetHistory(t *testing.T) {
 			"user2",
 			[]LinkJSON{
 				{
-					ShortURL: cfg.BaseURL + "/" + "2",
+					ShortURL: cfg.BaseURL + "/2",
 					LongURL:  "https://google.com",
 				},
 			},
@@ -235,7 +247,7 @@ func TestMapStorage_GetHistory(t *testing.T) {
 }
 
 func TestMapStorage_Ping(t *testing.T) {
-	cfg := config.GetDefaultConfig()
+	cfg := config.GetTestConfig()
 	s, err := NewMapStorage(cfg)
 	assert.NoError(t, err)
 

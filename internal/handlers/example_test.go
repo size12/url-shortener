@@ -17,7 +17,8 @@ func ExampleURLPostHandler() {
 	// data.
 	body := "https://yandex.ru"
 	// Generating handler.
-	cfg := config.GetDefaultConfig()
+	cfg := config.Config{BaseURL: "http://127.0.0.1:8080"}
+
 	s, err := storage.NewMapStorage(cfg)
 
 	if err != nil {
@@ -57,7 +58,8 @@ func ExampleURLBatchHandler() {
 			  {"correlation_id": "2", "original_url": "https://google.com"}, 
 			  {"correlation_id": "3", "original_url": "https://youtube.com"}]`
 	// Generating handler.
-	cfg := config.GetDefaultConfig()
+	cfg := config.Config{BaseURL: "http://127.0.0.1:8080"}
+
 	s, err := storage.NewMapStorage(cfg)
 
 	if err != nil {
@@ -96,7 +98,8 @@ func ExampleURLHistoryHandler() {
 	// data.
 	userID := "user12cookie"
 	// generating storage.
-	cfg := config.GetDefaultConfig()
+	cfg := config.Config{BaseURL: "http://127.0.0.1:8080"}
+
 	s, err := storage.NewMapStorage(cfg)
 
 	if err != nil {
@@ -145,7 +148,8 @@ func ExampleDeleteHandler() {
 	data := `["1"]`
 	userID := "user12cookie"
 	// generating storage.
-	cfg := config.GetDefaultConfig()
+	cfg := config.Config{BaseURL: "http://127.0.0.1:8080"}
+
 	s, err := storage.NewMapStorage(cfg)
 
 	if err != nil {
