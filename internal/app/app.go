@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/size12/url-shortener/internal/config"
@@ -72,7 +73,9 @@ func (app App) Run() {
 
 	go func() {
 		<-sigint
-		if err := server.Shutdown(context.Background()); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
 			log.Println("Failed shutdown server:", err)
 		}
 		close(idleConnsClosed)

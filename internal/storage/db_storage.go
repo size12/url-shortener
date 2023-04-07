@@ -265,6 +265,7 @@ func (s *DBStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	return history, nil
 }
 
+// GetStatistic gets total count of users and urls.
 func (s *DBStorage) GetStatistic() (Statistic, error) {
 	stat := Statistic{Urls: s.LastID}
 

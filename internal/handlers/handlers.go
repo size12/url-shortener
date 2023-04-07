@@ -245,6 +245,7 @@ func URLPostHandler(s storage.Storage) http.HandlerFunc {
 	}
 }
 
+// StatisticHandler returns total urls and users.
 func StatisticHandler(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		stats, err := s.GetStatistic()
