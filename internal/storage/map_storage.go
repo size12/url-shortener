@@ -121,3 +121,10 @@ func (s *MapStorage) GetHistory(userID string) ([]LinkJSON, error) {
 	}
 	return history, nil
 }
+
+func (s *MapStorage) GetStatistic() (Statistic, error) {
+	return Statistic{
+		Urls:  len(s.Locations),
+		Users: len(s.Users),
+	}, nil
+}

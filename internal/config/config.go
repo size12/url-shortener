@@ -19,6 +19,7 @@ type Config struct {
 	StoragePath     string `env:"FILE_STORAGE_PATH" json:"storage_path,omitempty"`
 	BasePath        string `env:"DATABASE_DSN" json:"base_path,omitempty"`
 	EnableHTTPS     bool   `env:"ENABLE_HTTPS" json:"enable_https,omitempty"`
+	TrustedSubnet   string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 	DBMigrationPath string
 }
 
@@ -69,6 +70,7 @@ func GetConfig() Config {
 		flag.StringVar(&flagCfg.BaseURL, "b", "", "Base URL")
 		flag.StringVar(&flagCfg.StoragePath, "f", "", "Storage path")
 		flag.StringVar(&flagCfg.BasePath, "d", "", "DataBase path")
+		flag.StringVar(&flagCfg.TrustedSubnet, "t", "", "Trusted subnet")
 		flag.BoolVar(&flagCfg.EnableHTTPS, "s", false, "Enable HTTPS")
 
 		// file config.

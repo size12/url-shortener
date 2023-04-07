@@ -61,6 +61,11 @@ func (app App) Run() {
 	r.Post("/api/shorten/batch", handlers.URLBatchHandler(s))
 	r.Post("/api/shorten", handlers.URLPostHandler(s))
 
+	r.Group(func(r chi.Router) {
+		r.Use(handlers.NewIPPermissionsChecker(app.Cfg))
+		r.Get("/api/internal/stats", handlers.StatisticHandler(s))
+	})
+
 	idleConnsClosed := make(chan struct{})
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)

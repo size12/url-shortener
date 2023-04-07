@@ -22,6 +22,7 @@ type Storage interface {
 	GetHistory(userID string) ([]LinkJSON, error)
 	Ping() error
 	GetConfig() config.Config
+	GetStatistic() (Statistic, error)
 }
 
 // NewStorage creates new storage based on config.
@@ -38,6 +39,12 @@ func NewStorage(cfg config.Config) (Storage, error) {
 }
 
 // Structs for response.
+
+// Statistic struct for statistic which contains total shortened URLs number and users number.
+type Statistic struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}
 
 // LinkJSON struct for history response.
 type LinkJSON struct {
