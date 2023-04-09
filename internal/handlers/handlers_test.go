@@ -66,7 +66,8 @@ func TestURLPostHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg := config.GetTestConfig()
 			tc.links.Cfg = cfg
-			h := URLPostHandler(tc.links)
+			handlers := NewService(cfg, tc.links)
+			h := URLPostHandler(handlers)
 			expiration := time.Now().Add(365 * 24 * time.Hour)
 			cookieString := "123456"
 			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
@@ -127,7 +128,8 @@ func TestURLPostJSONHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg := config.GetTestConfig()
 			tc.links.Cfg = cfg
-			h := URLPostHandler(tc.links)
+			handlers := NewService(cfg, tc.links)
+			h := URLPostHandler(handlers)
 			expiration := time.Now().Add(365 * 24 * time.Hour)
 			cookieString := "123456"
 			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
@@ -186,7 +188,8 @@ func TestURLGetHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg := config.GetTestConfig()
 			tc.links.Cfg = cfg
-			h := URLGetHandler(tc.links)
+			handlers := NewService(cfg, tc.links)
+			h := URLGetHandler(handlers)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
@@ -208,7 +211,8 @@ func TestPingHandler(t *testing.T) {
 	s, err := storage.NewMapStorage(cfg)
 	assert.NoError(t, err)
 
-	h := PingHandler(s)
+	handlers := NewService(cfg, s)
+	h := PingHandler(handlers)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookieString := "user12"
 	cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
