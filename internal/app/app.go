@@ -43,6 +43,8 @@ func (app App) Run() {
 		HostPolicy: autocert.HostWhitelist(baseURL.Host),
 	}
 
+	service := handlers.NewService(app.Cfg, s)
+
 	server := &http.Server{
 		Addr:      app.Cfg.ServerAddress,
 		Handler:   r,
@@ -54,17 +56,17 @@ func (app App) Run() {
 	r.Use(handlers.GzipRequest)
 
 	r.MethodNotAllowed(handlers.URLErrorHandler)
-	r.Get("/ping", handlers.PingHandler(s))
-	r.Get("/{id}", handlers.URLGetHandler(s))
-	r.Get("/api/user/urls", handlers.URLHistoryHandler(s))
-	r.Delete("/api/user/urls", handlers.DeleteHandler(s))
-	r.Post("/", handlers.URLPostHandler(s))
-	r.Post("/api/shorten/batch", handlers.URLBatchHandler(s))
-	r.Post("/api/shorten", handlers.URLPostHandler(s))
+	r.Get("/ping", handlers.PingHandler(service))
+	r.Get("/{id}", handlers.URLGetHandler(service))
+	r.Get("/api/user/urls", handlers.URLHistoryHandler(service))
+	r.Delete("/api/user/urls", handlers.DeleteHandler(service))
+	r.Post("/", handlers.URLPostHandler(service))
+	r.Post("/api/shorten/batch", handlers.URLBatchHandler(service))
+	r.Post("/api/shorten", handlers.URLPostHandler(service))
 
 	r.Group(func(r chi.Router) {
 		r.Use(handlers.NewIPPermissionsChecker(app.Cfg))
-		r.Get("/api/internal/stats", handlers.StatisticHandler(s))
+		r.Get("/api/internal/stats", handlers.StatisticHandler(service))
 	})
 
 	idleConnsClosed := make(chan struct{})
