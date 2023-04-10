@@ -3,7 +3,9 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,7 +17,9 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/handlers"
 	"github.com/size12/url-shortener/internal/storage"
+	pb "github.com/size12/url-shortener/proto"
 	"golang.org/x/crypto/acme/autocert"
+	"google.golang.org/grpc"
 )
 
 // App is struct of service.
@@ -73,6 +77,23 @@ func (app App) Run() {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
+	listen, err := net.Listen("tcp", app.Cfg.GrpcPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// создаём gRPC-сервер без зарегистрированной службы
+	sgrpc := grpc.NewServer()
+	// регистрируем сервис
+	pb.RegisterShortenerServer(sgrpc, handlers.NewShortenerServer(app.Cfg, service))
+
+	go func() {
+		fmt.Println("Сервер gRPC начал работу")
+		// получаем запрос gRPC
+		if err := sgrpc.Serve(listen); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	go func() {
 		<-sigint
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -80,6 +101,7 @@ func (app App) Run() {
 		if err := server.Shutdown(ctx); err != nil {
 			log.Println("Failed shutdown server:", err)
 		}
+		sgrpc.GracefulStop()
 		close(idleConnsClosed)
 	}()
 
