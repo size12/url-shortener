@@ -235,4 +235,16 @@ func TestDBStorage(t *testing.T) {
 	assert.Equal(t, ErrRow, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 
+	// get statistic.
+	mock.ExpectQuery("SELECT COUNT(DISTINCT cookie) FROM links;").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(20))
+
+	stat, err := s.GetStatistic()
+	assert.NoError(t, err)
+	assert.Equal(t, Statistic{
+		Urls:  s.LastID,
+		Users: 20,
+	}, stat)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+
 }

@@ -51,5 +51,6 @@ func TestChangeByPriority(t *testing.T) {
 		BasePath:        cfg.BasePath,
 		EnableHTTPS:     cfg.EnableHTTPS,
 		DBMigrationPath: cfg.DBMigrationPath,
+		GrpcPort:        cfg.GrpcPort,
 	}, cfg)
 }

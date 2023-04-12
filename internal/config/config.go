@@ -43,6 +43,7 @@ func GetTestConfig() Config {
 		StoragePath:   "file_storage.txt",
 		BasePath:      "mockedDB",
 		EnableHTTPS:   false,
+		GrpcPort:      ":3200",
 	}
 }
 

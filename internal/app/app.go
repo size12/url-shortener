@@ -17,7 +17,7 @@ import (
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/handlers"
 	"github.com/size12/url-shortener/internal/storage"
-	pb "github.com/size12/url-shortener/proto"
+	pb "github.com/size12/url-shortener/pkg/grpc"
 	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
 )

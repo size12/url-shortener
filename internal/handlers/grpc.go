@@ -5,7 +5,7 @@ import (
 
 	"github.com/size12/url-shortener/internal/config"
 	"github.com/size12/url-shortener/internal/storage"
-	pb "github.com/size12/url-shortener/proto"
+	pb "github.com/size12/url-shortener/pkg/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
