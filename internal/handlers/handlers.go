@@ -12,9 +12,7 @@ import (
 	"github.com/size12/url-shortener/internal/storage"
 )
 
-type Handlers interface {
-}
-
+// Service struct for service layer.
 type Service struct {
 	cfg     config.Config
 	storage storage.Storage

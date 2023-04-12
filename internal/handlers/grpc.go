@@ -12,12 +12,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// ShortenerServer is struct for grpc.
 type ShortenerServer struct {
 	pb.UnimplementedShortenerServer
 	cfg     config.Config
 	service *Service
 }
 
+// NewShortenerServer gets new ShortenerServer.
 func NewShortenerServer(cfg config.Config, service *Service) *ShortenerServer {
 	return &ShortenerServer{
 		cfg:     cfg,
@@ -25,6 +27,7 @@ func NewShortenerServer(cfg config.Config, service *Service) *ShortenerServer {
 	}
 }
 
+// Ping check connection to storage.
 func (server *ShortenerServer) Ping(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 	empty := &emptypb.Empty{}
 	err := server.service.CheckPing()
@@ -34,6 +37,7 @@ func (server *ShortenerServer) Ping(ctx context.Context, in *emptypb.Empty) (*em
 	return empty, nil
 }
 
+// CreateShort creates short from long url.
 func (server *ShortenerServer) CreateShort(ctx context.Context, in *pb.Link) (*pb.Link, error) {
 	result := &pb.Link{}
 
@@ -62,6 +66,7 @@ func (server *ShortenerServer) CreateShort(ctx context.Context, in *pb.Link) (*p
 	return result, err
 }
 
+// GetStatistics gets count of urls and users.
 func (server *ShortenerServer) GetStatistics(ctx context.Context, _ *emptypb.Empty) (*pb.Statistic, error) {
 	result := &pb.Statistic{}
 	stat, err := server.service.GetStatistic()
@@ -71,6 +76,7 @@ func (server *ShortenerServer) GetStatistics(ctx context.Context, _ *emptypb.Emp
 	return result, err
 }
 
+// GetLong gets long url from short one.
 func (server *ShortenerServer) GetLong(ctx context.Context, in *pb.Link) (*pb.Link, error) {
 	result := &pb.Link{}
 	long, err := server.service.GetLongURL(in.Id)
@@ -81,6 +87,7 @@ func (server *ShortenerServer) GetLong(ctx context.Context, in *pb.Link) (*pb.Li
 	return result, err
 }
 
+// Delete deletes url from storage.
 func (server *ShortenerServer) Delete(ctx context.Context, in *pb.Link) (*emptypb.Empty, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -97,6 +104,7 @@ func (server *ShortenerServer) Delete(ctx context.Context, in *pb.Link) (*emptyp
 	return nil, err
 }
 
+// GetHistory gets history.
 func (server *ShortenerServer) GetHistory(ctx context.Context, in *emptypb.Empty) (*pb.Batch, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok || len(md.Get("userID")) == 0 {
@@ -122,6 +130,7 @@ func (server *ShortenerServer) GetHistory(ctx context.Context, in *emptypb.Empty
 	return result, nil
 }
 
+// BatchShort shorts many urls, not single one.
 func (server *ShortenerServer) BatchShort(ctx context.Context, in *pb.Batch) (*pb.Batch, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok || len(md.Get("userID")) == 0 {

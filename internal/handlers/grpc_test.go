@@ -54,7 +54,7 @@ func TestGRPCHandlers(t *testing.T) {
 
 	// create bad short.
 	in.LongUrl = "rkgrekgeg"
-	out, err = server.CreateShort(ctx, in)
+	_, err = server.CreateShort(ctx, in)
 	assert.Error(t, err)
 	assert.Equal(t, copyMapLoc, s.Locations)
 
