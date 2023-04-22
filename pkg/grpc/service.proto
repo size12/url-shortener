@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package url_shortener;
+
+option go_package = "github.com/size12/url-shortener";
+
+import "google/protobuf/empty.proto";
+
+message Link {
+  string correlation_id = 1;
+  string long_url = 2;
+  string short_url = 3;
+  string id = 4;
+}
+
+message Statistic {
+  uint32 urls = 1;
+  uint32 users = 2;
+}
+
+message Batch {
+  repeated Link result = 1;
+}
+
+service Shortener {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc CreateShort(Link) returns (Link);
+  rpc GetStatistics(google.protobuf.Empty) returns (Statistic);
+  rpc GetLong(Link) returns (Link);
+  rpc BatchShort(Batch) returns (Batch);
+  rpc Delete(Link) returns (google.protobuf.Empty);
+  rpc GetHistory(google.protobuf.Empty) returns (Batch);
+}

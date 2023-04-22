@@ -9,9 +9,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/size12/url-shortener/internal/config"
 )
 
 // compress response.
@@ -123,4 +127,39 @@ func GzipHandle(next http.Handler) http.Handler {
 		w.Header().Set("Content-Encoding", "gzip")
 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
 	})
+}
+
+// NewIPPermissionsChecker checks if user can get statistic.
+func NewIPPermissionsChecker(cfg config.Config) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if cfg.TrustedSubnet == "" {
+				http.Error(w, "403 Forbidden", http.StatusForbidden)
+				return
+			}
+
+			rawIP := r.Header.Get("X-Real-IP")
+
+			if rawIP == "" {
+				http.Error(w, "403 Forbidden", http.StatusForbidden)
+				return
+			}
+
+			IP := net.ParseIP(rawIP)
+			_, subnet, err := net.ParseCIDR(cfg.TrustedSubnet)
+
+			if err != nil {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				log.Fatalln("Failed parse CIDR subnet address:", err)
+				return
+			}
+
+			if !subnet.Contains(IP) {
+				http.Error(w, "403 Forbidden", http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

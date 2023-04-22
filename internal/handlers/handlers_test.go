@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -66,7 +67,8 @@ func TestURLPostHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg := config.GetTestConfig()
 			tc.links.Cfg = cfg
-			h := URLPostHandler(tc.links)
+			handlers := NewService(cfg, tc.links)
+			h := URLPostHandler(handlers)
 			expiration := time.Now().Add(365 * 24 * time.Hour)
 			cookieString := "123456"
 			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
@@ -127,7 +129,8 @@ func TestURLPostJSONHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg := config.GetTestConfig()
 			tc.links.Cfg = cfg
-			h := URLPostHandler(tc.links)
+			handlers := NewService(cfg, tc.links)
+			h := URLPostHandler(handlers)
 			expiration := time.Now().Add(365 * 24 * time.Hour)
 			cookieString := "123456"
 			cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
@@ -186,7 +189,8 @@ func TestURLGetHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			cfg := config.GetTestConfig()
 			tc.links.Cfg = cfg
-			h := URLGetHandler(tc.links)
+			handlers := NewService(cfg, tc.links)
+			h := URLGetHandler(handlers)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			assert.Equal(t, tc.want.code, res.StatusCode)
@@ -208,7 +212,8 @@ func TestPingHandler(t *testing.T) {
 	s, err := storage.NewMapStorage(cfg)
 	assert.NoError(t, err)
 
-	h := PingHandler(s)
+	handlers := NewService(cfg, s)
+	h := PingHandler(handlers)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookieString := "user12"
 	cookie := http.Cookie{Name: "userID", Value: cookieString, Expires: expiration, Path: "/"}
@@ -218,6 +223,64 @@ func TestPingHandler(t *testing.T) {
 	defer res.Body.Close()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
+}
+
+func TestService_GetStatistic(t *testing.T) {
+	request := httptest.NewRequest("GET", "/api/internal/stats", nil)
+	w := httptest.NewRecorder()
+	cfg := config.GetTestConfig()
+	s, err := storage.NewMapStorage(cfg)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, err)
+
+	handlers := NewService(cfg, s)
+	h := StatisticHandler(handlers)
+	h.ServeHTTP(w, request)
+
+	result := w.Result()
+	assert.Equal(t, http.StatusOK, result.StatusCode)
+	defer result.Body.Close()
+
+	check := storage.Statistic{}
+
+	bytes, err := io.ReadAll(result.Body)
+	assert.NoError(t, err)
+
+	err = json.Unmarshal(bytes, &check)
+	assert.NoError(t, err)
+	assert.Equal(t, storage.Statistic{
+		Urls:  0,
+		Users: 0,
+	}, check)
+
+	// adding url to storage.
+	_, err = s.CreateShort("user12", "https://yandex.ru")
+	assert.NoError(t, err)
+
+	w = httptest.NewRecorder()
+
+	h.ServeHTTP(w, request)
+
+	result = w.Result()
+	assert.Equal(t, http.StatusOK, result.StatusCode)
+	defer result.Body.Close()
+
+	check = storage.Statistic{}
+
+	bytes, err = io.ReadAll(result.Body)
+	assert.NoError(t, err)
+
+	t.Log(string(bytes))
+
+	err = json.Unmarshal(bytes, &check)
+	assert.NoError(t, err)
+	assert.Equal(t, storage.Statistic{
+		Urls:  1,
+		Users: 1,
+	}, check)
+
 }
 
 func TestGenerateRandom(t *testing.T) {

@@ -25,7 +25,8 @@ func ExampleURLPostHandler() {
 		log.Fatal("Failed get storage")
 	}
 
-	h := URLPostHandler(s)
+	handlers := NewService(cfg, s)
+	h := URLPostHandler(handlers)
 
 	// Generating request.
 	request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
@@ -66,7 +67,8 @@ func ExampleURLBatchHandler() {
 		log.Fatal("Failed get storage")
 	}
 
-	h := URLBatchHandler(s)
+	handlers := NewService(cfg, s)
+	h := URLBatchHandler(handlers)
 
 	// Generating request.
 	request := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", strings.NewReader(body))
@@ -119,7 +121,8 @@ func ExampleURLHistoryHandler() {
 		log.Fatal("Failed shorten URL")
 	}
 	// Generating handler.
-	h := URLHistoryHandler(s)
+	handlers := NewService(cfg, s)
+	h := URLHistoryHandler(handlers)
 
 	// Generating request.
 	request := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
@@ -170,7 +173,8 @@ func ExampleDeleteHandler() {
 	}
 
 	// Generating handler.
-	h := DeleteHandler(s)
+	handlers := NewService(cfg, s)
+	h := DeleteHandler(handlers)
 
 	// Generating request.
 	request := httptest.NewRequest(http.MethodDelete, "/api/user/urls", strings.NewReader(data))

@@ -19,6 +19,8 @@ type Config struct {
 	StoragePath     string `env:"FILE_STORAGE_PATH" json:"storage_path,omitempty"`
 	BasePath        string `env:"DATABASE_DSN" json:"base_path,omitempty"`
 	EnableHTTPS     bool   `env:"ENABLE_HTTPS" json:"enable_https,omitempty"`
+	TrustedSubnet   string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+	GrpcPort        string `env:"GRPC_RUN_PORT" json:"grpc_port"`
 	DBMigrationPath string
 }
 
@@ -26,6 +28,7 @@ type Config struct {
 func GetDefaultConfig() Config {
 	return Config{
 		ServerAddress:   ":8080",
+		GrpcPort:        ":3200",
 		BaseURL:         "http://127.0.0.1:8080",
 		DBMigrationPath: "file://migrations",
 		EnableHTTPS:     false,
@@ -40,6 +43,7 @@ func GetTestConfig() Config {
 		StoragePath:   "file_storage.txt",
 		BasePath:      "mockedDB",
 		EnableHTTPS:   false,
+		GrpcPort:      ":3200",
 	}
 }
 
@@ -69,6 +73,8 @@ func GetConfig() Config {
 		flag.StringVar(&flagCfg.BaseURL, "b", "", "Base URL")
 		flag.StringVar(&flagCfg.StoragePath, "f", "", "Storage path")
 		flag.StringVar(&flagCfg.BasePath, "d", "", "DataBase path")
+		flag.StringVar(&flagCfg.TrustedSubnet, "t", "", "Trusted subnet")
+		flag.StringVar(&flagCfg.GrpcPort, "gp", "", "gRPC run port")
 		flag.BoolVar(&flagCfg.EnableHTTPS, "s", false, "Enable HTTPS")
 
 		// file config.

@@ -140,3 +140,11 @@ func (s *FileStorage) GetHistory(userID string) ([]LinkJSON, error) {
 
 	return history, nil
 }
+
+// GetStatistic gets total count of users and urls.
+func (s *FileStorage) GetStatistic() (Statistic, error) {
+	return Statistic{
+		Urls:  s.LastID,
+		Users: 0,
+	}, nil
+}

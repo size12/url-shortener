@@ -20,6 +20,7 @@ func TestGetDefaultConfig(t *testing.T) {
 		ServerAddress:   ":8080",
 		BaseURL:         "http://127.0.0.1:8080",
 		DBMigrationPath: "file://migrations",
+		GrpcPort:        ":3200",
 	}, cfg)
 }
 
@@ -34,6 +35,7 @@ func TestGetConfig(t *testing.T) {
 		BasePath:        "postgresql://",
 		EnableHTTPS:     true,
 		DBMigrationPath: "file://migrations",
+		GrpcPort:        ":3200",
 	}, cfg)
 }
 
@@ -49,5 +51,6 @@ func TestChangeByPriority(t *testing.T) {
 		BasePath:        cfg.BasePath,
 		EnableHTTPS:     cfg.EnableHTTPS,
 		DBMigrationPath: cfg.DBMigrationPath,
+		GrpcPort:        cfg.GrpcPort,
 	}, cfg)
 }

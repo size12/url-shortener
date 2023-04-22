@@ -196,3 +196,29 @@ func TestFileStorage_GetHistory(t *testing.T) {
 	err = os.RemoveAll(cfg.StoragePath)
 	assert.NoError(t, err)
 }
+
+func TestFileStorage_GetStatistic(t *testing.T) {
+	cfg := config.GetTestConfig()
+
+	s, err := NewFileStorage(cfg)
+	assert.NoError(t, err)
+
+	stat, err := s.GetStatistic()
+	assert.NoError(t, err)
+	assert.Equal(t, Statistic{
+		Urls:  0,
+		Users: 0,
+	}, stat)
+
+	// add url and get statistic again.
+	_, err = s.CreateShort("user12", "https:/yandex.ru")
+	assert.NoError(t, err)
+	stat, err = s.GetStatistic()
+	assert.NoError(t, err)
+	assert.Equal(t, Statistic{
+		Urls:  1,
+		Users: 0,
+	}, stat)
+	err = os.RemoveAll(cfg.StoragePath)
+	assert.NoError(t, err)
+}

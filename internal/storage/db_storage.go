@@ -264,3 +264,24 @@ func (s *DBStorage) GetHistory(userID string) ([]LinkJSON, error) {
 
 	return history, nil
 }
+
+// GetStatistic gets total count of users and urls.
+func (s *DBStorage) GetStatistic() (Statistic, error) {
+	stat := Statistic{Urls: s.LastID}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	row := s.DB.QueryRowContext(ctx, "SELECT COUNT(DISTINCT cookie) FROM links;")
+
+	err := row.Scan(&stat.Users)
+	if err != nil {
+		return stat, err
+	}
+
+	if err := row.Err(); err != nil {
+		return stat, err
+	}
+
+	return stat, nil
+}
